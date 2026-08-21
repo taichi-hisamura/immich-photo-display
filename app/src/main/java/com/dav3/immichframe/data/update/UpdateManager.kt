@@ -94,6 +94,12 @@ constructor(
     suspend fun checkForUpdate(): Boolean = withContext(Dispatchers.IO) {
         Log.d(TAG, "checkForUpdate: starting (debug=${BuildConfig.DEBUG}, versionName=${BuildConfig.VERSION_NAME}, gitSha=${BuildConfig.GIT_SHA.take(8)})")
 
+        if (!BuildConfig.SELF_UPDATE_ENABLED) {
+            Log.d(TAG, "checkForUpdate: disabled — fork release channel is not configured")
+            _state.value = UpdateState(available = false)
+            return@withContext false
+        }
+
         if (isInstalledFromPlayStore()) {
             Log.d(TAG, "checkForUpdate: skipped — installed from Play Store")
             return@withContext false

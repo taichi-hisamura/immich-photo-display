@@ -1,5 +1,9 @@
 # Immich API Reference
 
+> **Normative fork override:** [Low-bandwidth fork profile](low-bandwidth-profile.md).
+> The fork uses image previews and `x-api-key` header authentication; it does
+> not call the original-asset endpoint during synchronization or playback.
+
 Base URL: user-provided (e.g. `https://photos.example.com:2283` or `http://192.168.1.100:2283`)
 
 All endpoints are under `/api` prefix.
@@ -12,30 +16,19 @@ Send the API key as an HTTP header:
 x-api-key: ***
 ```
 
-The app uses this header for all Retrofit API calls (injected via an OkHttp
-interceptor in `ImmichRepositoryImpl.kt`).
-
-For image/video URLs fetched by Coil and ExoPlayer (which do not use the
-Retrofit client), the API key is appended as a query parameter:
-
-```
-?apiKey=<key>
-```
-
-> **Immich v3 note**: Immich v3 renamed the query parameter from `apiKey` to
-> `key`. The app currently uses `apiKey` for image/video URLs. If your Immich
-> server is on v3 and images fail to load (404/401), this is the likely cause.
-> The `x-api-key` header used by Retrofit calls is unaffected and works on
-> both v1 and v3.
+The app uses this header for Retrofit calls, permission probes, persistent
+preview downloads, and Coil image requests. The API key is never appended to
+a media URL. Coil adds the header only for the configured Immich origin and
+`/api/assets/` path.
 
 ## Media URL Routing
 
 | Asset type | Endpoint | Notes |
 |---|---|---|
-| Standard image | `GET /api/assets/{id}/thumbnail?size=preview` | Immich transcodes to JPEG preview; small and fast. Auth: `?apiKey=` query param. |
-| Animated GIF | `GET /api/assets/{id}/original` | The thumbnail endpoint re-encodes GIFs as JPEG, collapsing the animation. GIFs are detected by `originalMimeType == "image/gif"` (from the `/search/metadata` response) and routed to `/original` so Coil's `GifDecoder` receives the raw animated bytes. |
-| Video | `GET /api/assets/{id}/original` | Loaded by ExoPlayer. Auth: `?apiKey=` query param. |
-| Thumbnail (media-selection grid) | `GET /api/assets/{id}/thumbnail?size=thumbnail` | Always JPEG — Coil can't decode a video file into a still, and GIF thumbnails are fine as static images. |
+| Standard image | `GET /api/assets/{id}/thumbnail?size=preview` | Display and persistent offline cache. Auth: `x-api-key` header. |
+| Animated GIF | `GET /api/assets/{id}/thumbnail?size=preview` | Static preview only; the original animation is not downloaded. |
+| Video | Not requested | Metadata is filtered before cache/display and `videoUrl()` fails closed. |
+| Thumbnail (media-selection grid) | `GET /api/assets/{id}/thumbnail?size=thumbnail` | Auth: scoped `x-api-key` header. |
 
 API keys can be created in Immich under User Settings > API Keys, and can be
 scoped to specific permissions.
@@ -47,14 +40,13 @@ and discards the password. See F1 in the functional spec for details.
 
 ### Required Permissions
 
-The API key needs 5 scoped permissions:
+The API key needs 4 scoped permissions:
 
 | Permission | Used for |
 |---|---|
 | `album.read` | List albums, get album info |
 | `asset.read` | Search/list assets in albums (POST /search/metadata) |
-| `asset.view` | View thumbnails and previews (images via `?apiKey=`) |
-| `asset.download` | Download original files (video playback via ExoPlayer) |
+| `asset.view` | View thumbnails and previews |
 | `user.read` | Validate API key (GET /users/me) |
 
 These permissions are the minimum required for ImmichFrame to function.
@@ -74,16 +66,7 @@ script. Probes run in dependency order:
 | 1 | `GET /api/users/me` | `user.read` | `x-api-key` header | Also validates the key itself |
 | 2 | `GET /api/albums` | `album.read` | `x-api-key` header | Returns album list |
 | 3 | `POST /api/search/metadata` | `asset.read` | `x-api-key` header | Returns first asset ID for downstream probes |
-| 4 | `GET /api/assets/{id}/thumbnail?size=preview` | `asset.view` | `?apiKey=` query param | **Same auth path as Coil image loading** — probed via OkHttp, not Retrofit, because the real app never loads media through the header |
-| 5 | `GET /api/assets/{id}/original` | `asset.download` | `?apiKey=` query param | **Same auth path as ExoPlayer video loading** — Optional; gates video playback + media cache |
-
-> **Why two auth methods?** Steps 4–5 use the `?apiKey=` query parameter
-> (not the `x-api-key` header) because that is exactly how Coil (images) and
-> ExoPlayer (videos) authenticate when loading media in the app. Probing with
-> the header would test a code path the app never actually uses — and on some
-> Immich deployments the two auth methods are handled differently for scoped
-> keys, causing a false "missing asset.view" report despite images loading
-> fine. Using the query param makes the probe reflect reality.
+| 4 | `GET /api/assets/{id}/thumbnail?size=preview` | `asset.view` | `x-api-key` header | Same authentication mechanism as downloader and Coil |
 
 If an upstream probe fails, downstream probes are skipped and marked
 "unknown" (not "denied"). Results are stored as `permission_status` (JSON)
@@ -271,7 +254,7 @@ Response:
 ```
 
 The app extracts `id` and `type` from each asset in `assets.items`. Assets
-with `type == "VIDEO"` are handled by ExoPlayer (when Skip Videos is off).
+with `type == "VIDEO"` are discarded by the low-bandwidth sync/display policy.
 
 DTOs are in `Dtos.kt` (`SearchMetadataRequest`, `SearchMetadataResponse`,
 `SearchAssetsDto`, `AssetDto`).
@@ -284,7 +267,7 @@ DTOs are in `Dtos.kt` (`SearchMetadataRequest`, `SearchMetadataResponse`,
 GET /api/assets/{id}/thumbnail?size=preview
 ```
 
-Auth: `x-api-key` header **or** `?apiKey=<key>` query param.
+Auth: `x-api-key` header.
 
 Returns a web-friendly preview image. The `size` parameter accepts:
 - `thumbnail` — small (~100px), used for album picker thumbnails
@@ -293,20 +276,10 @@ Returns a web-friendly preview image. The `size` parameter accepts:
 The app requests `size=preview` for all slideshow images to optimize
 bandwidth and disk cache usage.
 
-For video playback:
-
-```
-GET /api/assets/{id}/original
-```
-
-Returns the original binary data (video file). Used by ExoPlayer when
-Skip Videos is off. Requires the `asset.download` permission (distinct from
-`asset.view`, which only covers thumbnails/previews).
-
 URL construction is in `ImmichRepositoryImpl.kt`:
-- `imageUrl(assetId)` → `{base}/api/assets/{id}/thumbnail?size=preview&apiKey={key}`
-- `thumbnailUrl(assetId)` → `{base}/api/assets/{id}/thumbnail?size=thumbnail&apiKey={key}`
-- `videoUrl(assetId)` → `{base}/api/assets/{id}/original?apiKey={key}`
+- `imageUrl(assetId)` → `{base}/api/assets/{id}/thumbnail?size=preview`
+- `thumbnailUrl(assetId)` → `{base}/api/assets/{id}/thumbnail?size=thumbnail`
+- `videoUrl(assetId)` → throws `UnsupportedOperationException`
 
 ## Rate Limiting
 

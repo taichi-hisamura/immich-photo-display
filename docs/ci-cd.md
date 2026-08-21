@@ -1,5 +1,12 @@
 ## CI/CD Setup
 
+> **Fork safety status (2026-08-21):** existing workflow descriptions below
+> refer to the upstream repository. In-app self-update is disabled in this
+> fork. Do not enable or publish a production release until a fork-owned
+> GitHub repository, contributor identity, signing key, protected branches,
+> and upgrade policy have been configured. See
+> [low-bandwidth-profile.md](low-bandwidth-profile.md).
+
 ### Branching Strategy
 
 - `develop` — active development branch. Push/PR triggers a debug APK build.

@@ -16,15 +16,12 @@ interface ImmichRepository {
 
     suspend fun getAlbumAssets(albumId: String, cursor: String?): Result<List<Asset>>
 
-    /**
-     * Display URL for an image asset. GIFs are routed to the `/original`
-     * endpoint (raw bytes for Coil's GifDecoder); all other images use the
-     * `/thumbnail?size=preview` transcoded JPEG.
-     */
+    /** Display URL for an image asset; always an Immich preview transcode. */
     fun imageUrl(assetId: String, mimeType: String? = null): String
 
     fun thumbnailUrl(assetId: String): String
 
+    /** Always fails closed in this image-only fork. */
     fun videoUrl(assetId: String): String
 
     /** Invalidate cached API/client so new credentials take effect. */
@@ -33,7 +30,7 @@ interface ImmichRepository {
     /**
      * Probe all required API endpoints to determine which permissions the
      * current API key has. Tests endpoints in dependency order (user → albums
-     * → assets → thumbnail → download); if an upstream call fails, downstream
+     * → assets → thumbnail); if an upstream call fails, downstream
      * probes are marked Unknown rather than Denied.
      *
      * Called during setup and when the Settings screen opens.

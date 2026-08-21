@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Immich Media Frame</string>
+    <string name="app_name">Immich Frame Low Bandwidth</string>
     <string name="app_name_dev">Immich Media Frame - Dev</string>
 
     <!-- Sections -->
@@ -23,6 +23,7 @@
     <string name="skip_videos">Skip Videos</string>
     <string name="skip_videos_desc">Only show photos</string>
     <string name="skip_videos_locked_desc">Locked — API key lacks \'asset.download\' permission</string>
+    <string name="low_bandwidth_images_only_desc">Always enabled in the low-bandwidth build; videos are never downloaded or displayed</string>
     <string name="muted">Muted</string>
     <string name="muted_desc">Silence video audio</string>
     <string name="photo_animations">Photo Animations</string>
@@ -89,7 +90,7 @@
         <string name="auto_sync">Auto Sync</string>
         <string name="auto_sync_desc">Automatically download new photos and remove deleted ones in the background</string>
         <string name="sync_interval">Sync Interval</string>
-        <string name="sync_interval_desc">How often to check for album changes (1 min - 24 hours)</string>
+        <string name="sync_interval_desc">How often to check for album changes (1–24 hours; default 6 hours)</string>
         <string name="sync_now">Sync Now</string>
         <string name="sync_status_idle">Idle</string>
         <string name="sync_status_syncing">Syncing…</string>

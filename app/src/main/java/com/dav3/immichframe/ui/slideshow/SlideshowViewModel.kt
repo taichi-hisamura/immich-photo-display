@@ -101,24 +101,25 @@ constructor(
                     onFailure = { /* cache miss is non-fatal */ },
                 )
             }
+            val uniqueCachedAssets = cachedAssets.distinctBy(Asset::id)
 
-            if (cachedAssets.isNotEmpty()) {
+            if (uniqueCachedAssets.isNotEmpty()) {
                 // Resolve local file paths up front so imageUrl/videoUrl can
                 // serve offline `file://` URIs without per-frame DB lookups.
                 localFilePaths.clear()
                 localFilePaths.putAll(
-                    cacheRepo.getAssetFilePaths(cachedAssets.map { it.id }),
+                    cacheRepo.getAssetFilePaths(uniqueCachedAssets.map { it.id }),
                 )
                 localThumbnailPaths.clear()
                 localThumbnailPaths.putAll(
-                    cacheRepo.getAssetThumbnailPaths(cachedAssets.map { it.id }),
+                    cacheRepo.getAssetThumbnailPaths(uniqueCachedAssets.map { it.id }),
                 )
 
                 // Show cached assets immediately
-                val videoCount = cachedAssets.count { it.type == AssetType.VIDEO }
-                val imageCount = cachedAssets.count { it.type == AssetType.IMAGE }
+                val videoCount = uniqueCachedAssets.count { it.type == AssetType.VIDEO }
+                val imageCount = uniqueCachedAssets.count { it.type == AssetType.IMAGE }
                 android.util.Log.d("SlideshowLoad", "Cache: $imageCount images, $videoCount videos, skipVideos=${s.skipVideos}")
-                val filteredAssets = applyMediaSelection(cachedAssets, toggledIds, newItemsShown)
+                val filteredAssets = applyMediaSelection(uniqueCachedAssets, toggledIds, newItemsShown)
                     .let { if (s.skipVideos) it.filter { it.type == AssetType.IMAGE } else it }
                 val ordered = if (s.shuffle) filteredAssets.shuffled() else filteredAssets
                 _uiState.value = if (ordered.isNotEmpty()) {
@@ -129,7 +130,7 @@ constructor(
 
                 // Kick off background sync via WorkManager (worker handles download + reconcile)
                 if (s.autoSync) {
-                    syncScheduler.syncNow(albumIds)
+                    syncScheduler.syncIfStale(albumIds)
                 }
             } else {
                 // Cold start: no cache yet — fetch metadata from network for immediate display
@@ -147,6 +148,7 @@ constructor(
                         },
                     )
                 }
+                val uniqueAssets = allAssets.distinctBy(Asset::id)
 
                 if (albumGone) {
                     // Album deleted on server — clear selection and signal UI
@@ -155,9 +157,9 @@ constructor(
                     return@launch
                 }
 
-                val filteredAssets = applyMediaSelection(allAssets, toggledIds, newItemsShown)
+                val filteredAssets = applyMediaSelection(uniqueAssets, toggledIds, newItemsShown)
                     .let { if (s.skipVideos) it.filter { it.type == AssetType.IMAGE } else it }
-                android.util.Log.d("SlideshowLoad", "Network: ${allAssets.count { it.type == AssetType.IMAGE }} images, ${allAssets.count { it.type == AssetType.VIDEO }} videos, skipVideos=${s.skipVideos}")
+                android.util.Log.d("SlideshowLoad", "Network: ${uniqueAssets.count { it.type == AssetType.IMAGE }} images, ${uniqueAssets.count { it.type == AssetType.VIDEO }} videos, skipVideos=${s.skipVideos}")
                 val ordered = if (s.shuffle) filteredAssets.shuffled() else filteredAssets
 
                 _uiState.value = when {
@@ -211,9 +213,8 @@ constructor(
      * locally on disk, returns a `file://` URI (works offline). Otherwise
      * returns the network URL (requires server connectivity).
      *
-     * GIFs are routed to the `/original` endpoint (via [ImmichRepository.imageUrl])
-     * so Coil's GifDecoder receives the raw animated bytes. Other images use
-     * the transcoded preview thumbnail.
+     * This low-bandwidth build always uses the transcoded preview endpoint;
+     * animated GIFs therefore display as a static preview frame.
      */
     fun imageUrl(asset: Asset): String {
         localFilePaths[asset.id]?.let { path ->

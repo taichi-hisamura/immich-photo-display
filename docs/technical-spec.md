@@ -1,5 +1,9 @@
 # Technical Specification
 
+> **Normative fork override:** [Low-bandwidth fork profile](low-bandwidth-profile.md).
+> Sections retained from upstream may describe functionality intentionally
+> disabled by this fork.
+
 ## Tech Stack
 
 | Layer | Technology | Version (approx) |
@@ -10,8 +14,8 @@
 | Target SDK | API 35 (Android 15) | Latest stable |
 | HTTP Client | Retrofit 3 + OkHttp | 3.0 / 5.4 |
 | JSON Parsing | Kotlinx Serialization | 1.7+ |
-| Image Loading | Coil 3 (Compose) + GifDecoder | 3.5 |
-| Video Playback | Media3 ExoPlayer | 1.5.1 |
+| Image Loading | Coil 3 (Compose), static previews only | 3.5 |
+| Video Playback | Disabled by the low-bandwidth profile | N/A |
 | Color Extraction | AndroidX Palette | 1.0+ |
 | Animation | Compose Animation Core | (BOM) |
 | Local Storage | DataStore (Preferences) | 1.1+ |
@@ -117,12 +121,10 @@ UI (Compose) → ViewModel → Repository → Retrofit → Immich API
 
 - **ViewModel** holds UI state as `StateFlow`, survives config changes.
 - **Repository** abstracts data sources (remote API + local storage).
-- **Coil** handles image fetching/caching transparently — the slideshow
-  feeds Coil image URLs and Coil manages the disk/memory cache. A custom
-  `SingletonImageLoader.Factory` in `ImmichFrameApp` registers
-  `GifDecoder.Factory()` so animated GIFs decode frame-by-frame.
-- **ExoPlayer (Media3)** handles video playback inline within the slideshow
-  for video assets (when Skip Videos is off).
+- **Coil** displays local preview files and fetches preview/thumbnail URLs on
+  cache misses. GIF originals are not decoded; Immich's static preview is used.
+- Video playback code inherited from upstream is unreachable: settings force
+  Skip Videos on, metadata sync filters `VIDEO`, and `videoUrl()` fails closed.
 - **Palette API** extracts dominant colors from each image's top/bottom and
   left/right halves for adaptive background (per-edge letterbox gradient fill).
 - **Retrofit OkHttp interceptor** injects the `x-api-key` header on every
@@ -140,7 +142,7 @@ UI (Compose) → ViewModel → Repository → Retrofit → Immich API
 
 ## Package Naming
 
-Application ID: `com.dav3.immichframe`
+Application ID: `com.familyphotoframe.immichframe.lowbandwidth`
 
 ## Image Caching Strategy
 
@@ -151,38 +153,19 @@ Configuration:
 - **Disk cache**: 500 MB (configurable), stores preview-quality images
 - **Prefetch**: Slideshow prefetches the next 3 images ahead of the current one
 
-**Offline display**: `SlideshowViewModel.imageUrl()` / `videoUrl()` resolve
-the asset's local cached file first (`file://<path>`) and only fall back to
-the network URL (`.../api/assets/{id}/...?apiKey=...`) on a cache miss. This
-makes the slideshow fully offline-capable once assets are synced. The same
-pattern applies to `MediaSelectionViewModel.thumbnailUrl()` for the
-media-selection grid.
-- **Image size**: Request preview thumbnails (`size=preview` in Immich API)
-  for slideshow display, not full originals — saves bandwidth and disk.
-  **Exception: animated GIFs** are routed to `/original` (raw bytes) instead
-  of the `/thumbnail` JPEG transcode, otherwise the animation collapses to
-  a single frame. Detection is by `originalMimeType == "image/gif"`, which
-  is carried through `AssetDto` → `Asset` → `CachedAsset` (persisted as
-  `original_mime_type` in the cache DB).
+**Offline display**: `SlideshowViewModel.imageUrl()` resolves a local preview
+file first (`file://<path>`) and falls back to
+`/api/assets/{id}/thumbnail?size=preview` on a cache miss. The API key is not
+embedded in the URL. `MediaSelectionViewModel.thumbnailUrl()` uses the same
+local-first pattern. GIFs display Immich's static preview; videos are excluded.
 
-### Auth for image/video URLs
+### Auth for image URLs
 
-Image and video URLs are constructed with the API key appended as a query
-parameter (`?apiKey=<key>`) for Coil and ExoPlayer to fetch without custom
-HTTP clients. API calls (Retrofit) use the `x-api-key` header via an
-OkHttp interceptor instead.
-
-**Permission probes use the same auth path as the feature they test**:
-steps 1–3 (`user.read`, `album.read`, `asset.read`) go through the Retrofit
-header path, but steps 4–5 (`asset.view`, `asset.download`) are probed via
-raw OkHttp with the `?apiKey=` query param — exactly how Coil/ExoPlayer
-load media. This ensures the probe reflects what the app actually does,
-not a code path it never uses.
-
-> **Note**: Immich v3 deprecated the `apiKey` query parameter in favor of
-> `key`. The app currently uses `apiKey` for image/video URLs and may need
-> to switch to `key` if the Immich server stops accepting the old param.
-> See [api-reference.md](api-reference.md) for details.
+Retrofit, the preview downloader, the permission probe, and Coil all use the
+`x-api-key` header. Media URLs contain no credential. Coil's interceptor adds
+the header only when scheme, host, port, configured base path, and
+`/api/assets/` path match the configured Immich server. Redirects are disabled
+for all API-key-bearing clients.
 
 ## Media Cache (Room + WorkManager)
 
@@ -192,10 +175,11 @@ loading.
 
 ### Database schema
 
-- **`cached_assets`** — one row per downloaded asset: `id`, `album_id`,
-  `type` (IMAGE/VIDEO), `file_path`, `thumbnail_path`, `file_size`,
-  `checksum`, `last_modified`, `cached_at`, `original_mime_type`. Indexed
-  on `album_id`, `cached_at`, `last_modified`.
+- **`cached_assets`** — one row per physical preview: `id`, `type`,
+  `file_path`, `thumbnail_path`, `file_size`, `checksum`, `last_modified`,
+  `cached_at`, `original_mime_type`.
+- **`album_asset_cross_refs`** — composite `(album_id, asset_id)` membership;
+  several albums can share one physical preview safely.
 - **`album_sync_states`** — per-album sync metadata: `album_id` (PK),
   `last_synced_at`, `last_cursor`, `asset_count`.
 
@@ -205,12 +189,11 @@ loading.
    assets exist, they're displayed immediately. The ViewModel resolves
    each asset's local `file_path` up front (batch query via
    `MediaCacheRepository.getAssetFilePaths`) and serves `file://` URIs
-   to Coil/ExoPlayer — so the slideshow is fully **offline-capable**,
-   reading image and video bytes from disk with no network access. If
-   `autoSync` is on, a one-time `MediaCacheWorker` is enqueued to
-   reconcile the cache against the server.
+   to Coil, so the image slideshow is fully **offline-capable**. If `autoSync`
+   is on, foreground sync is enqueued only when the previous successful sync
+   is older than the configured interval.
 2. **Periodic sync**: `SyncScheduler` enqueues a periodic
-   `MediaCacheWorker` (minimum interval 15 min, enforced by WorkManager)
+   `MediaCacheWorker` (fork minimum 60 min; default 360 min)
    that fetches album asset lists, downloads new/updated assets, and
    removes deleted ones.
 3. **Worker logic** (`MediaCacheWorker.performFullSync`):
@@ -223,7 +206,9 @@ loading.
      search-service transient issue) does not wipe the cache.
    - Deletes cached assets no longer in the remote album (only when remote
      list is non-empty)
-   - Downloads new/updated assets (original + thumbnail) via OkHttp
+   - Filters out videos and downloads one bounded preview for each new/updated image
+   - Skips download when cached and remote `lastModified` values match
+   - Retries transient metadata/download failures without deleting the old cache
    - Updates `AlbumSyncState` with sync timestamp + asset count
    - Reports progress via `SyncProgress` StateFlow
    - If **all** selected albums were deleted (404), clears
@@ -284,12 +269,12 @@ Setup → Albums → Slideshow
 | Keep screen on | DataStore | `keep_screen_on` | String bool |
 | Fullscreen | DataStore | `fullscreen` | String bool |
 | Shuffle | DataStore | `shuffle` | String bool |
-| Skip videos | DataStore | `skip_videos` | String bool |
+| Skip videos | DataStore | `skip_videos` | Forced `true` in this fork |
 | Muted | DataStore | `muted` | String bool |
 | Start on boot | DataStore | `start_on_boot` | String bool |
 | Launcher mode | DataStore | `launcher_mode` | String bool (enables the Home activity-alias) |
 | Boot verified | DataStore | `boot_verified` | String bool (self-test: BootReceiver sets true on successful fire) |
-| Auto-update | DataStore | `auto_update` | String bool |
+| Auto-update | DataStore | `auto_update` | Forced `false` in this fork |
 | Adaptive background | DataStore | `adaptive_background` | String bool |
 | Photo animations | DataStore | `photo_animations` | String bool |
 | Anim: Zoom In | DataStore | `anim_zoom_in` | String bool |
@@ -299,7 +284,7 @@ Setup → Albums → Slideshow
 | Anim: Pan Up | DataStore | `anim_pan_up` | String bool |
 | Anim: Pan Down | DataStore | `anim_pan_down` | String bool |
 | Auto Sync | DataStore | `auto_sync` | String bool (default true) |
-| Sync Interval | DataStore | `sync_interval_minutes` | Int (1 or 5–480 step 5, default 30) |
+| Sync Interval | DataStore | `sync_interval_minutes` | Int (60/180/360/720/1440, default 360) |
 | Night Mode | DataStore | `night_mode` | String bool (default false) |
 | Night Mode Start | DataStore | `night_mode_start` | Int (minutes since midnight, default 1320 = 22:00) |
 | Night Mode End | DataStore | `night_mode_end` | Int (minutes since midnight, default 420 = 07:00) |
@@ -312,9 +297,9 @@ Setup → Albums → Slideshow
 | Onboarding Steps | DataStore | `onboarding_completed_steps` | StringSet (step IDs) |
 
 > **Note**: The `original_mime_type` column is NOT a DataStore key — it is a
-> Room column on the `cached_assets` table (version 2 of `media_cache_db`).
-> It holds the Immich `originalMimeType` string (e.g. `image/gif`) used to
-> route GIFs to the `/original` endpoint at display time.
+> Room column on the `cached_assets` table (version 3 of `media_cache_db`).
+> It retains Immich metadata for diagnostics; all image types still use the
+> static preview endpoint.
 
 All settings flow through a single shared DataStore instance
 (`DataStoreProvider.kt`) — there must be only one DataStore active per file

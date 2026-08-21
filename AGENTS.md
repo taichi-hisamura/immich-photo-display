@@ -5,8 +5,9 @@ Read this before making any changes.
 
 ## Project
 
-ImmichFrame — native Android photo frame app for Immich.
-Package: `com.dav3.immichframe`. Kotlin + Jetpack Compose + Hilt.
+Immich Frame Low Bandwidth — metered Android photo frame fork of v0.5.0.
+Application ID: `com.familyphotoframe.immichframe.lowbandwidth`.
+Namespace remains `com.dav3.immichframe`. Kotlin + Jetpack Compose + Hilt.
 Local directory: `~/Documents/git/immich-android/` (intentionally not renamed).
 GitHub: `dave-palt/immich-photo-frame`.
 
@@ -28,7 +29,7 @@ Suppressed ktlint rules (in `app/build.gradle.kts`):
 
 1. `git fetch --all` before starting.
 2. Branch off `origin/develop`: `feat/<description>` or `fix/<description>`.
-3. Commit as `dave-palt` (`git@dav3.cc`).
+3. Preserve the actual contributor identity; never impersonate upstream.
 4. PRs target `develop`. `main` is production-only (merged via PR).
 5. NEVER force-push to `develop` or `main`.
 
@@ -42,9 +43,10 @@ UI (Compose) → ViewModel (StateFlow) → Repository → Retrofit (x-api-key he
 
 - Single shared DataStore (`DataStoreProvider.kt`). Never create a second
   `preferencesDataStore` delegate — it crashes with `IllegalStateException`.
-- Image/video URLs append `?apiKey=<key>` for Coil/ExoPlayer (no custom HTTP
-  client). Retrofit calls use the `x-api-key` header via OkHttp interceptor.
-- Self-update uses `BuildConfig.GIT_SHA` vs GitHub release tag (`dev-{sha}`).
+- Media URLs contain no API key. A scoped Coil OkHttp interceptor adds the
+  `x-api-key` header only for the configured Immich origin and assets path.
+- Upstream self-update is disabled until a fork-owned signed release channel
+  is configured.
 
 ## Docs Must Stay in Sync (MANDATORY)
 
@@ -63,6 +65,7 @@ The docs live in `docs/`:
 | `docs/api-reference.md` | Immich + GitHub API endpoints used | Change an endpoint, auth method, or API key scope |
 | `docs/ci-cd.md` | Branching, workflows, secrets, signing | Change CI workflow, secrets, or release process |
 | `README.md` | Public-facing summary, feature list | Feature list changes, new requirement |
+| `docs/low-bandwidth-profile.md` | Normative fork invariants | Any fork behavior or release-policy change |
 
 ### Update checklist (run through after EVERY feature change)
 
@@ -141,6 +144,14 @@ Format:
   `apiKey` — documented as a known caveat in api-reference.md and technical-spec.md.
 
 <!-- Append new clarifications below this line. -->
+
+- **2026-08-21** — Low-bandwidth family photo-frame fork. The fork targets
+  unattended TB-X606X devices on metered SIM connections. Offline media sync
+  must cache preview images rather than originals, never cache videos, avoid
+  unchanged re-downloads, paginate complete albums, and preserve assets that
+  belong to multiple selected albums. API keys and deployment-specific values
+  must not be committed. Updated: implementation and product documentation are
+  being aligned as the feature is introduced.
 
 - **2026-07-30** — Screenshot testing infrastructure (all 5 screens).
   Added Roborazzi 1.70.0 + ComposablePreviewScanner 0.9.1 + Robolectric 4.17

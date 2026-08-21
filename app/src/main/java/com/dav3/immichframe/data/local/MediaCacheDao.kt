@@ -5,27 +5,54 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CachedAssetDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertAll(assets: List<CachedAssetEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insert(asset: CachedAssetEntity)
 
-    @Query("SELECT * FROM cached_assets WHERE album_id = :albumId")
-    suspend fun getByAlbumId(albumId: String): List<CachedAssetEntity>
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMemberships(memberships: List<AlbumAssetCrossRef>)
 
-    @Query("SELECT * FROM cached_assets WHERE album_id = :albumId")
-    fun getByAlbumIdFlow(albumId: String): Flow<List<CachedAssetEntity>>
+    @Query(
+        """
+        SELECT cached_assets.*, album_asset_cross_refs.album_id AS membership_album_id
+        FROM cached_assets
+        INNER JOIN album_asset_cross_refs
+            ON cached_assets.id = album_asset_cross_refs.asset_id
+        WHERE album_asset_cross_refs.album_id = :albumId
+        """,
+    )
+    suspend fun getByAlbumId(albumId: String): List<CachedAssetWithAlbum>
+
+    @Query(
+        """
+        SELECT cached_assets.*, album_asset_cross_refs.album_id AS membership_album_id
+        FROM cached_assets
+        INNER JOIN album_asset_cross_refs
+            ON cached_assets.id = album_asset_cross_refs.asset_id
+        WHERE album_asset_cross_refs.album_id = :albumId
+        """,
+    )
+    fun getByAlbumIdFlow(albumId: String): Flow<List<CachedAssetWithAlbum>>
+
+    @Query(
+        """
+        SELECT cached_assets.*, album_asset_cross_refs.album_id AS membership_album_id
+        FROM cached_assets
+        INNER JOIN album_asset_cross_refs
+            ON cached_assets.id = album_asset_cross_refs.asset_id
+        """,
+    )
+    suspend fun getAllWithMemberships(): List<CachedAssetWithAlbum>
 
     @Query("SELECT * FROM cached_assets")
-    suspend fun getAll(): List<CachedAssetEntity>
-
-    @Query("SELECT * FROM cached_assets")
-    fun getAllFlow(): Flow<List<CachedAssetEntity>>
+    suspend fun getAllAssets(): List<CachedAssetEntity>
 
     @Query("SELECT * FROM cached_assets WHERE id IN (:assetIds)")
     suspend fun getByIds(assetIds: List<String>): List<CachedAssetEntity>
@@ -33,17 +60,27 @@ interface CachedAssetDao {
     @Query("DELETE FROM cached_assets WHERE id IN (:assetIds)")
     suspend fun deleteByIds(assetIds: List<String>)
 
-    @Query("DELETE FROM cached_assets WHERE album_id = :albumId")
-    suspend fun deleteByAlbumId(albumId: String)
+    @Query("DELETE FROM album_asset_cross_refs WHERE album_id = :albumId AND asset_id IN (:assetIds)")
+    suspend fun deleteMemberships(albumId: String, assetIds: List<String>)
+
+    @Query("DELETE FROM album_asset_cross_refs WHERE album_id = :albumId")
+    suspend fun deleteMembershipsByAlbum(albumId: String)
+
+    @Query(
+        """
+        SELECT cached_assets.* FROM cached_assets
+        LEFT JOIN album_asset_cross_refs
+            ON cached_assets.id = album_asset_cross_refs.asset_id
+        WHERE album_asset_cross_refs.asset_id IS NULL
+        """,
+    )
+    suspend fun getOrphanedAssets(): List<CachedAssetEntity>
 
     @Query("DELETE FROM cached_assets")
     suspend fun deleteAll()
 
     @Query("SELECT * FROM cached_assets WHERE id = :assetId")
     suspend fun getById(assetId: String): CachedAssetEntity?
-
-    @Query("DELETE FROM cached_assets WHERE cached_at < :cutoff")
-    suspend fun deleteOlderThan(cutoff: Long): Int
 }
 
 @Dao

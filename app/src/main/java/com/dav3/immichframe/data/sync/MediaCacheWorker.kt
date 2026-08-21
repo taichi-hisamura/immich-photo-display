@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import com.dav3.immichframe.data.local.MediaCacheRepositoryImpl
 import com.dav3.immichframe.domain.model.AlbumSyncState
 import com.dav3.immichframe.domain.model.Asset
+import com.dav3.immichframe.domain.model.AssetType
 import com.dav3.immichframe.domain.model.CachedAsset
 import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.repository.ImmichRepository
@@ -16,9 +17,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import java.io.File
 
 @HiltWorker
@@ -29,67 +30,45 @@ class MediaCacheWorker @AssistedInject constructor(
     private val immichRepository: ImmichRepository,
     private val settingsRepository: SettingsRepository,
 ) : CoroutineWorker(context, params) {
+    private val previewDownloader = PreviewAssetDownloader()
 
     override suspend fun doWork(): ListenableWorker.Result = withContext(Dispatchers.IO) {
-        val albumIds = inputData.getStringArray(KEY_ALBUM_IDS)?.toList() ?: emptyList()
-        if (albumIds.isEmpty()) return@withContext ListenableWorker.Result.success()
+        syncMutex.withLock {
+            val albumIds = inputData.getStringArray(KEY_ALBUM_IDS)?.toList() ?: emptyList()
+            if (albumIds.isEmpty()) return@withLock ListenableWorker.Result.success()
 
-        try {
-            performFullSync(albumIds)
-            ListenableWorker.Result.success()
-        } catch (e: Exception) {
-            ListenableWorker.Result.failure()
+            try {
+                performFullSync(albumIds)
+                ListenableWorker.Result.success()
+            } catch (_: Exception) {
+                mediaCacheRepository.clearSyncProgress()
+                if (runAttemptCount < MAX_RETRY_ATTEMPTS) {
+                    ListenableWorker.Result.retry()
+                } else {
+                    ListenableWorker.Result.failure()
+                }
+            }
         }
     }
 
     private suspend fun performFullSync(albumIds: List<String>) {
-        // If the API key lacks asset.download, skip the entire download phase —
-        // the cache can't fetch originals without it. Metadata sync still runs
-        // so the asset list stays current; images just won't be available offline.
-        val permStatus = settingsRepository.permissionStatus.first()
-        val downloadDenied = permStatus?.statuses?.get(
-            com.dav3.immichframe.domain.model.RequiredPermission.ASSET_DOWNLOAD,
-        ) == com.dav3.immichframe.domain.model.PermissionStatus.Denied
-
-        if (downloadDenied) {
-            mediaCacheRepository.updateSyncProgress(
-                SyncProgress(
-                    albumIds = albumIds,
-                    currentAlbum = "",
-                    phase = SyncProgress.Phase.COMPLETE,
-                    totalAssets = 0,
-                    processedAssets = 0,
-                    currentAsset = "Skipped — API key lacks asset.download permission",
-                ),
-            )
-            return
-        }
-
         mediaCacheRepository.updateSyncProgress(
             SyncProgress(
                 albumIds = albumIds,
-                currentAlbum = albumIds.firstOrNull() ?: "",
+                currentAlbum = albumIds.firstOrNull().orEmpty(),
                 phase = SyncProgress.Phase.FETCHING_METADATA,
-                totalAssets = 0,
-                processedAssets = 0,
-                currentAsset = "",
             ),
         )
 
-        // Track which albums no longer exist on the server. If all selected
-        // albums are gone, clear the selection so the user is sent back to
-        // album selection instead of silently running an empty slideshow.
         val goneAlbums = mutableListOf<String>()
-
+        val syncErrors = mutableListOf<Throwable>()
         for (albumId in albumIds) {
             mediaCacheRepository.updateSyncProgress(
                 SyncProgress(
                     albumIds = albumIds,
                     currentAlbum = albumId,
                     phase = SyncProgress.Phase.FETCHING_METADATA,
-                    totalAssets = 0,
-                    processedAssets = 0,
-                    currentAsset = "Fetching album metadata...",
+                    currentAsset = "Fetching complete album metadata...",
                 ),
             )
 
@@ -97,24 +76,26 @@ class MediaCacheWorker @AssistedInject constructor(
                 onSuccess = { remoteAssets ->
                     downloadAndReconcile(albumId, albumIds, remoteAssets)
                 },
-                onFailure = { e ->
-                    if (isAlbumGone(e)) {
-                        // Album deleted on server — purge its cache and note it
+                onFailure = { error ->
+                    if (isAlbumGone(error)) {
                         mediaCacheRepository.clearAlbum(albumId)
-                        goneAlbums.add(albumId)
+                        goneAlbums += albumId
+                    } else {
+                        syncErrors += error
                     }
-                    // Transient network errors: skip, keep existing cache.
+                    // Pagination, network, and server failures preserve cache
+                    // and trigger WorkManager retry after other albums finish.
                 },
             )
         }
 
-        // If every selected album is gone, clear the selection so NavViewModel
-        // routes the user back to album selection on next foreground.
         if (goneAlbums.isNotEmpty() && goneAlbums.size == albumIds.size) {
             settingsRepository.setSelectedAlbumIds(emptyList())
         }
-
         mediaCacheRepository.clearSyncProgress()
+        if (syncErrors.isNotEmpty()) {
+            throw SyncFailedException(syncErrors)
+        }
     }
 
     private suspend fun downloadAndReconcile(
@@ -122,14 +103,14 @@ class MediaCacheWorker @AssistedInject constructor(
         albumIds: List<String>,
         remoteAssets: List<Asset>,
     ) {
+        val remoteImages = selectSyncableImages(remoteAssets)
         mediaCacheRepository.updateSyncProgress(
             SyncProgress(
                 albumIds = albumIds,
                 currentAlbum = albumId,
                 phase = SyncProgress.Phase.DOWNLOADING,
-                totalAssets = remoteAssets.size,
-                processedAssets = 0,
-                currentAsset = "Downloading ${remoteAssets.size} assets...",
+                totalAssets = remoteImages.size,
+                currentAsset = "Synchronizing ${remoteImages.size} preview images...",
             ),
         )
 
@@ -137,163 +118,115 @@ class MediaCacheWorker @AssistedInject constructor(
             AlbumSyncState(albumId = albumId)
         }
         val cachedAssets = mediaCacheRepository.getCachedAssets(albumId).getOrElse { emptyList() }
-        val remoteIds = remoteAssets.map { it.id }.toSet()
 
-        // Purge corrupt cache entries: files that are missing, empty, or whose
-        // on-disk size doesn't match the stored fileSize. These are removed from
-        // the DB so they're treated as "not cached" and redownloaded below.
-        val corruptIds = cachedAssets.filter { cached ->
-            val file = File(cached.filePath)
-            !file.exists() || file.length() == 0L || file.length() != cached.fileSize
-        }.map { it.id }
+        // A corrupt physical file invalidates every album membership for that
+        // asset. Removing the parent row cascades the memberships safely.
+        val corruptIds = cachedAssets.filterNot(::isValidCacheFile).map(CachedAsset::id)
         if (corruptIds.isNotEmpty()) {
-            android.util.Log.w("MediaCacheWorker", "Purging ${corruptIds.size} corrupt cache entries: ${corruptIds.take(3)}")
             mediaCacheRepository.removeAssets(corruptIds)
         }
-        // Recompute after purge so the download loop redownloads them.
-        val validCachedAssets = cachedAssets.filter { it.id !in corruptIds }
-        val validCachedIds = validCachedAssets.map { it.id }.toSet()
 
-        // Remove assets that are in cache but no longer in the album.
-        // Guard: only reconcile when we actually got a non-empty remote list —
-        // an empty response could be a transient server issue (e.g. search
-        // service restarting), and wiping the cache on that would leave the
-        // user with nothing to display offline.
-        if (remoteAssets.isNotEmpty()) {
-            val toRemove = validCachedAssets.filter { it.id !in remoteIds }
-            if (toRemove.isNotEmpty()) {
-                mediaCacheRepository.removeAssets(toRemove.map { it.id })
-            }
+        // This fork is image-only. Remove any original video left by an
+        // upstream build, without deleting a file still referenced elsewhere.
+        val cachedVideos = cachedAssets.filter { it.type == AssetType.VIDEO }
+        if (cachedVideos.isNotEmpty()) {
+            mediaCacheRepository.removeAlbumAssets(albumId, cachedVideos.map(CachedAsset::id))
         }
 
-        var processed = 0
-        for (asset in remoteAssets) {
-            processed++
+        val validCachedImages = cachedAssets.filter {
+            it.id !in corruptIds && it.type == AssetType.IMAGE
+        }
+        val remoteIds = remoteImages.map(Asset::id).toSet()
+
+        // Preserve the existing conservative empty-response behavior. A
+        // successful non-empty response (including an album containing only
+        // videos) is authoritative and may remove stale image memberships.
+        if (remoteAssets.isNotEmpty()) {
+            val removedIds = validCachedImages.filter { it.id !in remoteIds }.map(CachedAsset::id)
+            mediaCacheRepository.removeAlbumAssets(albumId, removedIds)
+        }
+
+        val downloadErrors = mutableListOf<Throwable>()
+        remoteImages.forEachIndexed { index, asset ->
             mediaCacheRepository.updateSyncProgress(
                 SyncProgress(
                     albumIds = albumIds,
                     currentAlbum = albumId,
                     phase = SyncProgress.Phase.DOWNLOADING,
-                    totalAssets = remoteAssets.size,
-                    processedAssets = processed,
-                    currentAsset = "Downloading ${asset.id.take(8)}...",
+                    totalAssets = remoteImages.size,
+                    processedAssets = index + 1,
+                    currentAsset = "Synchronizing ${asset.id.take(8)}...",
                 ),
             )
 
-            if (asset.id !in validCachedIds) {
-                downloadAsset(albumId, asset).onSuccess { cached ->
-                    mediaCacheRepository.upsertAssets(listOf(cached))
-                }
-            } else {
-                val cached = validCachedAssets.find { it.id == asset.id }
-                if (cached?.lastModified != asset.lastModified) {
-                    downloadAsset(albumId, asset).onSuccess { updated ->
-                        mediaCacheRepository.upsertAssets(listOf(updated))
-                    }
-                }
+            val albumCached = validCachedImages.find { it.id == asset.id }
+            when {
+                !shouldDownloadPreview(asset, albumCached) -> Unit
+                albumCached != null -> downloadAndStore(albumId, asset).onFailure(downloadErrors::add)
+                else -> linkSharedOrDownload(albumId, asset).onFailure(downloadErrors::add)
             }
+        }
+
+        if (downloadErrors.isNotEmpty()) {
+            throw SyncFailedException(downloadErrors)
         }
 
         mediaCacheRepository.updateAlbumSyncState(
             syncState.copy(
                 lastSyncedAt = System.currentTimeMillis(),
-                assetCount = remoteAssets.size,
+                assetCount = remoteImages.size,
             ),
         )
+    }
+
+    private suspend fun linkSharedOrDownload(
+        albumId: String,
+        asset: Asset,
+    ): kotlin.Result<Unit> {
+        val shared = mediaCacheRepository.getCachedAsset(asset.id)
+        return if (shared != null && shared.lastModified == asset.lastModified && isValidCacheFile(shared)) {
+            runCatching {
+                mediaCacheRepository.upsertAssets(listOf(shared.copy(albumId = albumId)))
+            }
+        } else {
+            downloadAndStore(albumId, asset)
+        }
+    }
+
+    private suspend fun downloadAndStore(
+        albumId: String,
+        asset: Asset,
+    ): kotlin.Result<Unit> = downloadAsset(albumId, asset).map { cached ->
+        mediaCacheRepository.upsertAssets(listOf(cached))
     }
 
     private suspend fun downloadAsset(
         albumId: String,
         asset: Asset,
     ): kotlin.Result<CachedAsset> = withContext(Dispatchers.IO) {
-        try {
+        runCatching {
             val apiKey = settingsRepository.apiKey.first()
-            val baseUrl = settingsRepository.serverUrl.first()
-            val base = if (baseUrl.endsWith("/")) "$baseUrl/api/" else "$baseUrl/api/"
-
-            val fileUrl = "${base}assets/${asset.id}/original?apiKey=$apiKey"
-            val thumbUrl = "${base}assets/${asset.id}/thumbnail?size=thumbnail&apiKey=$apiKey"
-
-            val cacheDir = mediaCacheRepository.cacheDir
+            val serverUrl = settingsRepository.serverUrl.first()
+            val cacheDir = File(mediaCacheRepository.cacheDir)
             val filePath = File(cacheDir, asset.id)
-            val thumbPath = File(cacheDir, "${asset.id}_thumb")
-            val tmpPath = File(cacheDir, "${asset.id}.tmp")
+            val fileSize = previewDownloader.download(serverUrl, asset.id, apiKey, filePath)
 
-            val client = OkHttpClient()
+            // The preview is sufficient for both slideshow display and local
+            // color/selection thumbnails. Remove the redundant legacy file.
+            File(cacheDir, "${asset.id}_thumb").delete()
 
-            // Download main file to a .tmp file first, then atomically rename
-            // to the final path only after validating completeness. This prevents
-            // truncated/partial files from being served as cached media.
-            val response = client.newCall(Request.Builder().url(fileUrl).build()).execute()
-            if (!response.isSuccessful) {
-                return@withContext kotlin.Result.failure(
-                    Exception("Download failed: ${response.code}"),
-                )
-            }
-            val expectedLength = response.header("Content-Length")?.toLongOrNull() ?: -1L
-            val body = response.body?.byteStream()
-                ?: return@withContext kotlin.Result.failure(Exception("Empty response body"))
-            tmpPath.outputStream().use { output -> body.copyTo(output) }
-
-            // Validate downloaded size against Content-Length (if server provided it).
-            // A mismatch means the download was truncated — delete and fail so the
-            // caller can retry and the UI falls back to the network URL.
-            val actualLength = tmpPath.length()
-            if (expectedLength > 0 && actualLength != expectedLength) {
-                tmpPath.delete()
-                return@withContext kotlin.Result.failure(
-                    Exception("Download truncated: got $actualLength/$expectedLength bytes"),
-                )
-            }
-            if (actualLength == 0L) {
-                tmpPath.delete()
-                return@withContext kotlin.Result.failure(Exception("Downloaded file is empty"))
-            }
-            // Atomic move — the final path only exists once the file is complete.
-            if (!tmpPath.renameTo(filePath)) {
-                tmpPath.delete()
-                return@withContext kotlin.Result.failure(Exception("Failed to move temp file to final path"))
-            }
-
-            // Download thumbnail (best-effort) — same atomic pattern.
-            var thumbPathResult: String? = null
-            val thumbTmp = File(cacheDir, "${asset.id}_thumb.tmp")
-            val thumbResponse = client.newCall(Request.Builder().url(thumbUrl).build()).execute()
-            if (thumbResponse.isSuccessful) {
-                val thumbExpected = thumbResponse.header("Content-Length")?.toLongOrNull() ?: -1L
-                thumbResponse.body?.byteStream()?.use { input ->
-                    thumbTmp.outputStream().use { output -> input.copyTo(output) }
-                    val thumbActual = thumbTmp.length()
-                    if (thumbExpected > 0 && thumbActual != thumbExpected) {
-                        thumbTmp.delete()
-                    } else if (thumbActual > 0) {
-                        if (thumbTmp.renameTo(thumbPath)) {
-                            thumbPathResult = thumbPath.absolutePath
-                        } else {
-                            thumbTmp.delete()
-                        }
-                    } else {
-                        thumbTmp.delete()
-                    }
-                }
-            }
-
-            kotlin.Result.success(
-                CachedAsset(
-                    id = asset.id,
-                    albumId = albumId,
-                    type = asset.type,
-                    filePath = filePath.absolutePath,
-                    thumbnailPath = thumbPathResult,
-                    fileSize = filePath.length(),
-                    checksum = null,
-                    lastModified = System.currentTimeMillis(),
-                    cachedAt = System.currentTimeMillis(),
-                    originalMimeType = asset.originalMimeType,
-                ),
+            CachedAsset(
+                id = asset.id,
+                albumId = albumId,
+                type = AssetType.IMAGE,
+                filePath = filePath.absolutePath,
+                thumbnailPath = filePath.absolutePath,
+                fileSize = fileSize,
+                checksum = null,
+                lastModified = asset.lastModified,
+                cachedAt = System.currentTimeMillis(),
+                originalMimeType = asset.originalMimeType,
             )
-        } catch (e: Exception) {
-            kotlin.Result.failure(e)
         }
     }
 
@@ -301,14 +234,28 @@ class MediaCacheWorker @AssistedInject constructor(
         const val WORK_NAME = "media_cache_sync"
         const val KEY_ALBUM_IDS = "albumIds"
         const val KEY_INCREMENTAL = "incremental"
+        private const val MAX_RETRY_ATTEMPTS = 3
+        private val syncMutex = Mutex()
     }
 }
 
-/**
- * Returns true if the exception indicates the album no longer exists on the
- * server (HTTP 404), as opposed to a transient network/server error.
- */
-private fun isAlbumGone(throwable: Throwable): Boolean {
-    val msg = throwable.message.orEmpty()
-    return msg.contains("404") || msg.contains("Not Found", ignoreCase = true)
+internal fun selectSyncableImages(remoteAssets: List<Asset>): List<Asset> = remoteAssets.filter { it.type == AssetType.IMAGE }
+
+internal fun shouldDownloadPreview(
+    remote: Asset,
+    cached: CachedAsset?,
+): Boolean = cached == null || cached.lastModified != remote.lastModified
+
+private fun isValidCacheFile(cached: CachedAsset): Boolean {
+    val file = File(cached.filePath)
+    return file.exists() && file.length() > 0L && file.length() == cached.fileSize
 }
+
+private fun isAlbumGone(throwable: Throwable): Boolean {
+    val message = throwable.message.orEmpty()
+    return message.contains("404") || message.contains("Not Found", ignoreCase = true)
+}
+
+private class SyncFailedException(
+    errors: List<Throwable>,
+) : Exception("Media cache synchronization failed for ${errors.size} operation(s)", errors.firstOrNull())

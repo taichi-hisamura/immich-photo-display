@@ -39,6 +39,7 @@ data class AssetDto(
 data class SearchMetadataRequest(
     val albumIds: List<String>,
     val size: Int = 1000,
+    val page: Int = 1,
 )
 
 @Serializable
@@ -51,6 +52,7 @@ data class SearchAssetsDto(
     val total: Int = 0,
     val count: Int = 0,
     val items: List<AssetDto> = emptyList(),
+    val nextPage: String? = null,
 )
 
 // --- Auth / Login ---
@@ -77,7 +79,6 @@ val REQUIRED_API_KEY_PERMISSIONS = listOf(
     "album.read",
     "asset.read",
     "asset.view",
-    "asset.download",
     "user.read",
 )
 
