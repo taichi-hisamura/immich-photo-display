@@ -53,12 +53,6 @@ enum class RequiredPermission(
         blocking = true,
         gatedSettingKey = null,
     ),
-    ASSET_DOWNLOAD(
-        scope = "asset.download",
-        featureName = "Play videos and cache photos for offline use",
-        blocking = false,
-        gatedSettingKey = "skip_videos", // forced true (skip) when missing
-    ),
     ;
 
     companion object {

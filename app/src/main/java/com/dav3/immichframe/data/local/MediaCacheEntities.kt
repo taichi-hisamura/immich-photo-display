@@ -1,7 +1,9 @@
 package com.dav3.immichframe.data.local
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.dav3.immichframe.domain.model.AssetType
@@ -10,14 +12,12 @@ import com.dav3.immichframe.domain.model.CachedAsset
 @Entity(
     tableName = "cached_assets",
     indices = [
-        Index(value = ["album_id"]),
         Index(value = ["cached_at"]),
         Index(value = ["last_modified"]),
     ],
 )
 data class CachedAssetEntity(
     @PrimaryKey val id: String,
-    @ColumnInfo(name = "album_id") val albumId: String,
     val type: AssetType,
     @ColumnInfo(name = "file_path") val filePath: String,
     @ColumnInfo(name = "thumbnail_path") val thumbnailPath: String?,
@@ -30,7 +30,6 @@ data class CachedAssetEntity(
     companion object {
         fun fromDomain(domain: CachedAsset): CachedAssetEntity = CachedAssetEntity(
             id = domain.id,
-            albumId = domain.albumId,
             type = domain.type,
             filePath = domain.filePath,
             thumbnailPath = domain.thumbnailPath,
@@ -41,9 +40,12 @@ data class CachedAssetEntity(
             originalMimeType = domain.originalMimeType,
         )
 
-        fun toDomain(entity: CachedAssetEntity): CachedAsset = CachedAsset(
+        fun toDomain(
+            entity: CachedAssetEntity,
+            albumId: String,
+        ): CachedAsset = CachedAsset(
             id = entity.id,
-            albumId = entity.albumId,
+            albumId = albumId,
             type = entity.type,
             filePath = entity.filePath,
             thumbnailPath = entity.thumbnailPath,
@@ -55,6 +57,29 @@ data class CachedAssetEntity(
         )
     }
 }
+
+@Entity(
+    tableName = "album_asset_cross_refs",
+    primaryKeys = ["album_id", "asset_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = CachedAssetEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["asset_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["asset_id"])],
+)
+data class AlbumAssetCrossRef(
+    @ColumnInfo(name = "album_id") val albumId: String,
+    @ColumnInfo(name = "asset_id") val assetId: String,
+)
+
+data class CachedAssetWithAlbum(
+    @Embedded val asset: CachedAssetEntity,
+    @ColumnInfo(name = "membership_album_id") val albumId: String,
+)
 
 @Entity(
     tableName = "album_sync_states",

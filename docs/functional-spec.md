@@ -1,5 +1,9 @@
 # Functional Specification
 
+> **Normative fork override:** [Low-bandwidth fork profile](low-bandwidth-profile.md).
+> Video/original-file behavior retained below documents upstream v0.5.0 and is
+> disabled in this fork.
+
 ## User Flows
 
 ### F1: First-Run Setup
@@ -31,18 +35,14 @@
      OAuth" → browser opens via Custom Tabs (PKCE flow) → callback deep-link
      returns to the app → JWT obtained → key created → session logged out.
 4. App validates the key by calling `GET /users/me`.
-5. **Permission verification**: App probes all 5 required endpoints in
-   dependency order (user → albums → search → thumbnail → original) to verify
+5. **Permission verification**: App probes all 4 required endpoints in
+   dependency order (user → albums → search → thumbnail) to verify
    the key has the necessary scopes. Results are stored as `permission_status`
    in DataStore.
    - If a **blocking** permission is missing (`user.read`, `album.read`,
      `asset.read`, `asset.view`), setup is blocked with an error showing
      which permissions are missing and a shortcut to generate a properly-
      scoped key.
-   - If only the **optional** permission (`asset.download`) is missing, setup
-     proceeds in degraded mode: video playback is locked off and the media
-     cache skips downloading originals. The user is informed which feature
-     is disabled and why.
 6. Credentials persisted: API key to encrypted on-device storage, server version
    + key-scope flag + permission status to DataStore.
 7. On success, proceed to **Settings** so the user can configure the frame
@@ -74,7 +74,7 @@
 
 1. App loads assets for selected album(s). **Cache-first**: if assets are
    already cached locally (Room database), they're displayed immediately
-   — including the image/video bytes themselves, which are read from disk
+   — including the preview image bytes themselves, which are read from disk
    via `file://` URIs. This means the slideshow works fully **offline**:
    once assets are cached, no server contact is needed to display them.
    On a cold start (empty cache), the app fetches asset metadata from the
@@ -83,15 +83,9 @@
    deletions for the next launch.
 2. If multiple albums selected, asset lists are merged.
 3. If **Shuffle** is enabled (default on), the merged list is randomized.
-4. If **Skip Videos** is enabled (default on), video assets are filtered out.
-   When disabled, video assets are played inline via ExoPlayer (Media3), with
-   optional mute and automatic advance on completion.
-5. **Animated GIFs** are rendered as animated images (not videos). They are
-   detected by `originalMimeType == "image/gif"` from the search response and
-   loaded from the `/original` endpoint (the `/thumbnail` transcode would
-   collapse the animation to a single JPEG frame). Coil's `GifDecoder`
-   decodes the frames; the slideshow interval timer advances as normal
-   (GIFs don't drive their own duration the way videos do).
+4. **Skip Videos** is permanently enabled. Video assets are never downloaded
+   or displayed, and the setting cannot be disabled.
+5. **Animated GIFs** use the static Immich preview; originals are not fetched.
 6. Slideshow displays each image fullscreen for the configured interval (default 30s).
 7. Transition between images is a crossfade (default 1s).
 8. Next image is pre-fetched and cached so transitions are instant.
@@ -252,8 +246,8 @@ Options:
   each photo's edge colors (top/bottom for horizontal bars, left/right for
   vertical bars; uses Palette API, default off)
 - **Shuffle** — randomize image order (default on)
-- **Skip Videos** — only show photos (default on)
-- **Muted** — silence video audio (default on)
+- **Skip Videos** — permanently on and disabled in the UI
+- **Muted** — retained from upstream but has no effect in image-only mode
 - **Photo Animations** — subtle Ken Burns zoom/pan on each photo (default off).
   Also serves as burn-in protection for always-on displays. When enabled,
   reveals individual toggles for: Zoom In, Zoom Out, Pan Left,
@@ -277,14 +271,12 @@ Options:
     hidden behind a black overlay and the auto-advance timer is paused.
 - **Start on Boot** — launch on device boot (default off). Requires the "Display over other apps" permission (Android 10+ BAL exemption); on Chinese OEMs, also shows an "Open Autostart Settings" button until a reboot confirms the receiver fired.
 - **Launcher Mode** — register as a Home launcher (default off; only visible when Start on Boot is enabled). The most reliable autostart method; the system always launches the Home app on boot, bypassing BOOT_COMPLETED and OEM autostart blocks entirely. Shows an "Open Launcher Settings" button to switch launchers or re-select this app; the same action is available in the slideshow hover UI.
-- **Auto-Update** — check GitHub for new builds (default on, hidden if Play
-  Store installed). A **"Check Now"** button below it triggers an immediate
-  update check regardless of the toggle state.
+- **Auto-Update** — permanently disabled until a fork-owned signed release
+  channel is configured.
 - **Media Cache** section:
   - **Auto Sync** — automatically download new photos and remove deleted
     ones in the background (default on)
-  - **Sync Interval** — how often to check for album changes, 1 min or 5–480 min
-    in steps of 5 (default 30; clamped to 15 min minimum by WorkManager)
+  - **Sync Interval** — 60, 180, 360, 720, or 1440 minutes (default 360)
   - **Sync Now** — trigger an immediate one-time sync
 - **Clock** section:
   - **Show Clock** — display time overlay (default off)
@@ -303,16 +295,14 @@ Options:
     is set up, a dialog prompts the user to create one.
   - Test Connection button
   - **API Key Permissions** card (shown when a key is set):
-    - Lists all 5 required permissions with ✓ (granted), ✗ (denied),
+    - Lists all 4 required permissions with ✓ (granted), ✗ (denied),
       or ? (unknown — couldn't probe) status icons.
     - **Re-check** button re-probes all endpoints.
     - Auto-refreshes every time Settings is opened.
     - If blocking permissions are missing, the card uses an error-colored
       background and shows guidance to regenerate the key.
-- **Feature gating based on permissions:**
-  - When `asset.download` is denied, the **Skip Videos** toggle is locked
-    ON (can't be turned off) with subtitle "Locked — API key lacks
-    'asset.download' permission". The media cache also skips downloading.
+- **Feature gating:** Skip Videos is locked ON by the fork profile regardless
+  of permission status; `asset.download` is not requested.
 - **Albums** — change album selection (returns to album picker). Requires
   biometric / device-credential authentication to open.
 - **Reset All Settings** — clears all settings, credentials, album selection,

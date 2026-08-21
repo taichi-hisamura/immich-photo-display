@@ -1,6 +1,7 @@
 package com.dav3.immichframe.data.local
 
 import android.content.Context
+import androidx.room.withTransaction
 import com.dav3.immichframe.domain.model.AlbumSyncState
 import com.dav3.immichframe.domain.model.CachedAsset
 import com.dav3.immichframe.domain.model.SyncProgress
@@ -30,7 +31,7 @@ class MediaCacheRepositoryImpl @Inject constructor(
     override suspend fun getCachedAssets(albumId: String): Result<List<CachedAsset>> = withContext(Dispatchers.IO) {
         try {
             val assets = db.cachedAssetDao().getByAlbumId(albumId)
-            Result.success(assets.map { CachedAssetEntity.toDomain(it) })
+            Result.success(assets.map { CachedAssetEntity.toDomain(it.asset, it.albumId) })
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -38,42 +39,70 @@ class MediaCacheRepositoryImpl @Inject constructor(
 
     override suspend fun getAllCachedAssets(): Result<List<CachedAsset>> = withContext(Dispatchers.IO) {
         try {
-            val assets = db.cachedAssetDao().getAll()
-            Result.success(assets.map { CachedAssetEntity.toDomain(it) })
+            val assets = db.cachedAssetDao().getAllWithMemberships()
+            Result.success(assets.map { CachedAssetEntity.toDomain(it.asset, it.albumId) })
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
     override suspend fun upsertAssets(assets: List<CachedAsset>) = withContext(Dispatchers.IO) {
-        db.cachedAssetDao().insertAll(assets.map { CachedAssetEntity.fromDomain(it) })
+        db.withTransaction {
+            db.cachedAssetDao().insertAll(assets.map { CachedAssetEntity.fromDomain(it) })
+            db.cachedAssetDao().insertMemberships(
+                assets.map { AlbumAssetCrossRef(albumId = it.albumId, assetId = it.id) },
+            )
+        }
     }
 
     override suspend fun removeAssets(assetIds: List<String>) = withContext(Dispatchers.IO) {
-        val assets = db.cachedAssetDao().getByIds(assetIds)
+        val assets = db.withTransaction {
+            val rows = db.cachedAssetDao().getByIds(assetIds)
+            db.cachedAssetDao().deleteByIds(assetIds)
+            rows
+        }
         assets.forEach { entity ->
             deleteFile(entity.filePath)
             deleteFile(entity.thumbnailPath)
         }
-        db.cachedAssetDao().deleteByIds(assetIds)
+    }
+
+    override suspend fun getCachedAsset(assetId: String): CachedAsset? = withContext(Dispatchers.IO) {
+        db.cachedAssetDao().getById(assetId)?.let { entity ->
+            CachedAssetEntity.toDomain(entity, albumId = "")
+        }
+    }
+
+    override suspend fun removeAlbumAssets(
+        albumId: String,
+        assetIds: List<String>,
+    ) = withContext(Dispatchers.IO) {
+        if (assetIds.isEmpty()) return@withContext
+        val orphans = db.withTransaction {
+            db.cachedAssetDao().deleteMemberships(albumId, assetIds)
+            detachOrphanedAssets()
+        }
+        deleteOrphanedFiles(orphans)
     }
 
     override suspend fun clearAlbum(albumId: String) = withContext(Dispatchers.IO) {
-        val assets = db.cachedAssetDao().getByAlbumId(albumId)
-        assets.forEach { entity ->
-            deleteFile(entity.filePath)
-            deleteFile(entity.thumbnailPath)
+        val orphans = db.withTransaction {
+            db.cachedAssetDao().deleteMembershipsByAlbum(albumId)
+            detachOrphanedAssets()
         }
-        db.cachedAssetDao().deleteByAlbumId(albumId)
+        deleteOrphanedFiles(orphans)
     }
 
     override suspend fun clearAll() = withContext(Dispatchers.IO) {
-        val assets = db.cachedAssetDao().getAll()
+        val assets = db.withTransaction {
+            val rows = db.cachedAssetDao().getAllAssets()
+            db.cachedAssetDao().deleteAll()
+            rows
+        }
         assets.forEach { entity ->
             deleteFile(entity.filePath)
             deleteFile(entity.thumbnailPath)
         }
-        db.cachedAssetDao().deleteAll()
     }
 
     override suspend fun getAlbumSyncState(albumId: String): Result<AlbumSyncState> = withContext(Dispatchers.IO) {
@@ -101,11 +130,11 @@ class MediaCacheRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAssetFilePath(assetId: String): String? = withContext(Dispatchers.IO) {
-        db.cachedAssetDao().getById(assetId)?.let { CachedAssetEntity.toDomain(it).filePath }
+        db.cachedAssetDao().getById(assetId)?.filePath
     }
 
     override suspend fun getAssetThumbnailPath(assetId: String): String? = withContext(Dispatchers.IO) {
-        db.cachedAssetDao().getById(assetId)?.let { CachedAssetEntity.toDomain(it).thumbnailPath }
+        db.cachedAssetDao().getById(assetId)?.thumbnailPath
     }
 
     override suspend fun getAssetFilePaths(assetIds: List<String>): Map<String, String> = withContext(Dispatchers.IO) {
@@ -133,11 +162,14 @@ class MediaCacheRepositoryImpl @Inject constructor(
 
     override suspend fun deleteAssetFiles(assetId: String) {
         withContext(Dispatchers.IO) {
-            db.cachedAssetDao().getById(assetId)?.let { entity ->
-                val domain = CachedAssetEntity.toDomain(entity)
-                deleteFile(domain.filePath)
-                deleteFile(domain.thumbnailPath)
+            val entity = db.withTransaction {
+                val row = db.cachedAssetDao().getById(assetId)
                 db.cachedAssetDao().deleteByIds(listOf(assetId))
+                row
+            }
+            entity?.let {
+                deleteFile(entity.filePath)
+                deleteFile(entity.thumbnailPath)
             }
         }
     }
@@ -153,5 +185,20 @@ class MediaCacheRepositoryImpl @Inject constructor(
 
     private fun deleteFile(path: String?) {
         path?.let { File(it).delete() }
+    }
+
+    private suspend fun detachOrphanedAssets(): List<CachedAssetEntity> {
+        val orphans = db.cachedAssetDao().getOrphanedAssets()
+        if (orphans.isNotEmpty()) {
+            db.cachedAssetDao().deleteByIds(orphans.map(CachedAssetEntity::id))
+        }
+        return orphans
+    }
+
+    private fun deleteOrphanedFiles(orphans: List<CachedAssetEntity>) {
+        orphans.forEach { entity ->
+            deleteFile(entity.filePath)
+            if (entity.thumbnailPath != entity.filePath) deleteFile(entity.thumbnailPath)
+        }
     }
 }

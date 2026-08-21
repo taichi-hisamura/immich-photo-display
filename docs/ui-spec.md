@@ -1,5 +1,9 @@
 # UI Specification
 
+> **Normative fork override:** [Low-bandwidth fork profile](low-bandwidth-profile.md).
+> In this fork Skip Videos is permanently enabled and upstream self-update is
+> disabled.
+
 Material 3 design. Dark theme by default (photo frame context — images
 look better against dark background). Light theme available as a setting.
 
@@ -137,7 +141,7 @@ Fullscreen, immersive mode (status bar + nav bar hidden).
 
 - Clock overlay appears when enabled. Long-press and drag to reposition.
 - Progress bar at the bottom shows elapsed/remaining time for current image.
-- Video assets (when Skip Videos is off) play inline with ExoPlayer.
+- Video assets are excluded; GIFs display as static previews.
 
 **On tap** — overlay controls fade in:
 
@@ -185,8 +189,8 @@ Accessible from album selection (gear icon) or slideshow controls (gear icon).
 │  Adaptive Background    [○]  │ ← toggle (per-edge letterbox gradient)
 │                              │
 │  Shuffle                [●]  │ ← toggle
-│  Skip Videos            [●]  │ ← toggle
-│  Muted                  [●]  │ ← toggle
+│  Skip Videos            [●]  │ ← locked ON (low-bandwidth profile)
+│  Muted                  [●]  │ ← retained; no effect in image-only mode
 │  Photo Animations       [○]  │ ← toggle (expandable)
 │  ┌─ Zoom In          [●]  ┐  │ ← shown when animations on
 │  │  Zoom Out         [○]  │  │
@@ -211,14 +215,12 @@ Accessible from album selection (gear icon) or slideshow controls (gear icon).
 │                              │
 │  Start on Boot          [○]  │ ← toggle (+ overlay & OEM autostart prompts)
 │  Launcher Mode          [○]  │ ← toggle (+ Open Launcher Settings button)
-│  Auto-Update            [●]  │ ← toggle (hidden if Play Store)
-│  Check Now                   │ ← button: shows status while active
-│                              │     ("Checking…", "Downloading…", "Update check failed")
+│  Auto-Update            [○]  │ ← disabled until fork release channel exists
 │                              │
 │  MEDIA CACHE                 │
 │  Auto Sync              [●]  │ ← toggle
-│  Sync Interval: 30 min      │
-│  [────────●──────────────]  │ ← slider (1, 5, 10, ... 480, step 5)
+│  Sync Interval: 360 min     │
+│  [60] [180] [360] [720] [1440] │
 │  ┌──────────────────────┐    │
 │  │     Sync Now         │    │ ← button → one-time sync
 │  └──────────────────────┘    │
@@ -254,7 +256,6 @@ Accessible from album selection (gear icon) or slideshow controls (gear icon).
 │  │ ✓ album.read         │    │
 │  │ ✓ asset.read         │    │
 │  │ ✓ asset.view         │    │
-│  │ ✗ asset.download     │    │ ← red if denied; card turns red if blocking missing
 │  └──────────────────────┘    │
 │                              │
 │  Reset All Settings          │ ← red text button (preserves tour progress)
@@ -270,11 +271,10 @@ Accessible from album selection (gear icon) or slideshow controls (gear icon).
   Tapping it triggers authentication before navigating to the album picker.
 - Changes saved immediately to DataStore (no save button needed).
 - "Test Connection" works same as setup screen.
-- **API Key Permissions card** (below Connection): shows ✓/✗/? for each of the 5
+- **API Key Permissions card** (below Connection): shows ✓/✗/? for each of the 4
   required permissions. Auto-refreshes when Settings opens; "Re-check" button
   re-probes. Card background turns error-colored if blocking permissions are
-  missing. When `asset.download` is denied, the Skip Videos toggle in the
-  Slideshow section is locked ON with an explanatory subtitle.
+  missing. Skip Videos is always locked ON by the low-bandwidth profile.
 - Back arrow returns to previous screen.
 - **System section** includes a version string in the top bar (`Settings vX.Y.Z`)
   and two tour replay buttons: **"Show Tour Again"** (replays only the Settings

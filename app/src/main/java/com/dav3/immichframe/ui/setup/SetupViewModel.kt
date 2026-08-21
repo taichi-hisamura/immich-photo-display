@@ -369,7 +369,6 @@ constructor(
 
     /**
      * Force-off any setting gated by a missing optional permission.
-     * E.g. if asset.download is denied, set skipVideos=true.
      */
     private suspend fun enforceDegradedSettings(result: PermissionCheckResult) {
         val currentSettings = settingsRepo.slideshowSettings.first()

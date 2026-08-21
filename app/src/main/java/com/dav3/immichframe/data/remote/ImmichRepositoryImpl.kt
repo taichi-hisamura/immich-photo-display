@@ -57,7 +57,6 @@ constructor(
      * 2. GET /albums             → album.read
      * 3. POST /search/metadata   → asset.read (needs albumId from step 2)
      * 4. GET /assets/{id}/thumbnail → asset.view (needs assetId from step 3)
-     * 5. GET /assets/{id}/original   → asset.download
      *
      * If an upstream step fails, downstream probes are marked Unknown.
      */
@@ -133,34 +132,21 @@ constructor(
 
         if (firstAssetId == null) {
             statuses[RequiredPermission.ASSET_VIEW] = PermissionStatus.Unknown
-            statuses[RequiredPermission.ASSET_DOWNLOAD] = PermissionStatus.Unknown
             return@runCatching PermissionCheckResult(statuses.toMap())
         }
 
         // 4. asset.view (thumbnail)
-        // Probe via the SAME auth path Coil uses for image loading:
-        // ?apiKey= query parameter, NOT the x-api-key header. The app never
-        // sends media requests with the header, so probing with it can report
-        // a false denial when the server treats the two auth methods
-        // differently for scoped keys.
         statuses[RequiredPermission.ASSET_VIEW] = probeAssetPermission(
             assetId = firstAssetId,
             suffix = "/thumbnail?size=preview",
-        )
-
-        // 5. asset.download (original)
-        // Same as above — ExoPlayer loads videos via ?apiKey= query param.
-        statuses[RequiredPermission.ASSET_DOWNLOAD] = probeAssetPermission(
-            assetId = firstAssetId,
-            suffix = "/original",
         )
 
         PermissionCheckResult(statuses.toMap())
     }
 
     /**
-     * Probe a media endpoint using the [apiKey] query parameter, the same auth
-     * mechanism Coil/ExoPlayer use. Returns:
+     * Probe a media endpoint using the same x-api-key header as the preview
+     * downloader and Coil network client. Returns:
      * - [Granted] on HTTP 200
      * - [Denied] only on HTTP 403 (Immich's real "missing scoped permission"
      *   signal — see auth-service.ts; 401 means the key itself wasn't accepted,
@@ -173,14 +159,17 @@ constructor(
     ): PermissionStatus = withContext(Dispatchers.IO) {
         val base = cachedBaseUrl ?: settings.serverUrl.first()
         val apiKey = settings.apiKey.first()
-        val sep = if (suffix.contains("?")) "&" else "?"
-        val url = "${base.trimEnd('/')}/api/assets/$assetId$suffix${sep}apiKey=$apiKey"
+        val url = "${base.trimEnd('/')}/api/assets/$assetId$suffix"
         val client = synchronized(this@ImmichRepositoryImpl) {
             cachedOkHttp ?: buildProbeClient().also { cachedOkHttp = it }
         }
         runCatching {
             client.newCall(
-                okhttp3.Request.Builder().url(url).get().build(),
+                okhttp3.Request.Builder()
+                    .url(url)
+                    .header(ImmichMediaAuthInterceptor.API_KEY_HEADER, apiKey)
+                    .get()
+                    .build(),
             ).execute().use { resp ->
                 resp.body?.close()
                 when (resp.code) {
@@ -196,7 +185,11 @@ constructor(
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
         }
-        return OkHttpClient.Builder().addInterceptor(logging).build()
+        return OkHttpClient.Builder()
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .addInterceptor(logging)
+            .build()
     }
     private fun getApi(): ImmichApi {
         val baseUrl = runBlocking { settings.serverUrl.first() }
@@ -227,6 +220,8 @@ constructor(
         val client =
             OkHttpClient
                 .Builder()
+                .followRedirects(false)
+                .followSslRedirects(false)
                 .addInterceptor(authInterceptor)
                 .addInterceptor(logging)
                 .build()
@@ -261,10 +256,8 @@ constructor(
     }
 
     override suspend fun getAlbumAssets(albumId: String): Result<List<Asset>> = runCatching {
-        getApi()
-            .searchAssets(SearchMetadataRequest(albumIds = listOf(albumId)))
-            .assets
-            .items
+        val api = getApi()
+        fetchAllAssetDtos(albumId) { request -> api.searchAssets(request) }
             .map { dto ->
                 Asset(
                     dto.id,
@@ -276,15 +269,8 @@ constructor(
     }
 
     override suspend fun getAlbumAssets(albumId: String, cursor: String?): Result<List<Asset>> = runCatching {
-        val request = SearchMetadataRequest(
-            albumIds = listOf(albumId),
-            size = 1000,
-        )
-        // TODO: Add cursor/pagination support when Immich API supports it
-        getApi()
-            .searchAssets(request)
-            .assets
-            .items
+        val api = getApi()
+        fetchAllAssetDtos(albumId) { request -> api.searchAssets(request) }
             .map { dto ->
                 Asset(
                     dto.id,
@@ -297,29 +283,15 @@ constructor(
 
     override fun imageUrl(assetId: String, mimeType: String?): String {
         val base = cachedBaseUrl ?: runBlocking { settings.serverUrl.first() }
-        val apiKey = runBlocking { settings.apiKey.first() }
-        // GIFs must load from /original — the thumbnail endpoint transcodes to
-        // JPEG, which collapses the animation to a single frame.
-        val suffix = if (mimeType?.equals("image/gif", ignoreCase = true) == true) {
-            "/original"
-        } else {
-            "/thumbnail?size=preview"
-        }
-        val sep = if (suffix.contains("?")) "&" else "?"
-        return "${base.trimEnd('/')}/api/assets/$assetId$suffix${sep}apiKey=$apiKey"
+        return "${base.trimEnd('/')}/api/assets/$assetId/thumbnail?size=preview"
     }
 
     override fun thumbnailUrl(assetId: String): String {
         val base = cachedBaseUrl ?: runBlocking { settings.serverUrl.first() }
-        val apiKey = runBlocking { settings.apiKey.first() }
-        return "${base.trimEnd('/')}/api/assets/$assetId/thumbnail?size=thumbnail&apiKey=$apiKey"
+        return "${base.trimEnd('/')}/api/assets/$assetId/thumbnail?size=thumbnail"
     }
 
-    override fun videoUrl(assetId: String): String {
-        val base = cachedBaseUrl ?: runBlocking { settings.serverUrl.first() }
-        val apiKey = runBlocking { settings.apiKey.first() }
-        return "${base.trimEnd('/')}/api/assets/$assetId/original?apiKey=$apiKey"
-    }
+    override fun videoUrl(assetId: String): String = throw UnsupportedOperationException("Video playback is disabled in the low-bandwidth build: $assetId")
 
     // ------------------------------------------------------------------
     // Setup / Key generation

@@ -1,5 +1,8 @@
 # Overview
 
+> **Fork profile:** [Low-bandwidth fork profile](low-bandwidth-profile.md)
+> overrides upstream-oriented descriptions in this document.
+
 ## Problem
 
 [ImmichFrame_Android](https://github.com/immichFrame/ImmichFrame_Android) uses an intermediary server architecture: a Docker container (ImmichFrame Server) holds your Immich API key, fetches images from Immich, and serves a web UI. The Android app is a WebView pointed at that container. An optional `AuthenticationSecret` gates access to the frame server.
@@ -22,13 +25,13 @@ The app stores the server URL and API key on-device, lets the user pick which al
 - Native Android UI (Jetpack Compose, no WebView)
 - Album picker with persistent multi-select selection
 - Fullscreen slideshow with crossfade transitions
-- Video playback (optional, with mute/skip controls)
+- Image-only slideshow using Immich preview assets
 - Draggable clock overlay with configurable size and position
 - Photo animations (Ken Burns zoom/pan) — also serves as burn-in protection for always-on displays
 - Adaptive background (fills letterbox bars with each photo's edge colors as a gradient)
 - Start-on-boot for dedicated frame devices
-- Self-update via GitHub releases (bypasses Play Store for sideloaded installs)
-- Offline-capable media cache (Room + WorkManager background sync)
+- Self-update disabled until a fork-owned signed release channel exists
+- Preview-only offline cache with metered-network synchronization controls
 - Night Mode (scheduled brightness dimming for always-on displays)
 - Minimal setup: enter URL, generate key in-app (or paste existing), pick album, done
 - Sensible defaults, configurable later

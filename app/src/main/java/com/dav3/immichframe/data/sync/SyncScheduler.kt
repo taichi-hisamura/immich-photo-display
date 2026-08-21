@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.dav3.immichframe.domain.model.AlbumSyncState
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,8 +31,8 @@ class SyncScheduler @Inject constructor(
      * Schedule (or cancel) periodic background sync based on user settings.
      * Call this from a coroutine — it reads DataStore values (suspend).
      *
-     * WorkManager enforces a 15-minute floor for periodic work, so very short
-     * intervals (e.g. 5 minutes) are clamped up to 15 minutes.
+     * This low-bandwidth build enforces an hourly floor; the default is six
+     * hours even though WorkManager itself permits shorter intervals.
      */
     suspend fun schedulePeriodicSync() {
         val settings = settingsRepository.slideshowSettings.first()
@@ -42,8 +44,9 @@ class SyncScheduler @Inject constructor(
         val albumIds = settingsRepository.selectedAlbumIds.first()
         if (albumIds.isEmpty()) return
 
-        // WorkManager's hard floor for periodic work is 15 minutes.
-        val intervalMinutes = settings.syncIntervalMinutes.toLong().coerceAtLeast(15)
+        // Full metadata scans are deliberately limited to hourly or slower on
+        // metered frame devices. The default is six hours.
+        val intervalMinutes = settings.syncIntervalMinutes.toLong().coerceAtLeast(60)
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -86,12 +89,56 @@ class SyncScheduler @Inject constructor(
             .build()
 
         val workRequest = OneTimeWorkRequestBuilder<MediaCacheWorker>()
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build(),
+            )
             .setInputData(inputData)
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
 
-        WorkManager.getInstance(context).enqueue(workRequest)
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            MediaCacheWorker.WORK_NAME,
+            ExistingWorkPolicy.KEEP,
+            workRequest,
+        )
+    }
+
+    /**
+     * Enqueue a foreground-triggered sync only when at least one selected
+     * album is older than the configured interval. Reopening the slideshow
+     * must not cause another full metadata scan on a metered connection.
+     */
+    suspend fun syncIfStale(albumIds: List<String>) {
+        if (albumIds.isEmpty()) return
+        val settings = settingsRepository.slideshowSettings.first()
+        val states = mediaCacheRepository.getAllAlbumSyncStates().getOrElse { emptyList() }
+        if (
+            isAnyAlbumSyncStale(
+                albumIds = albumIds,
+                states = states,
+                intervalMinutes = settings.syncIntervalMinutes,
+                now = System.currentTimeMillis(),
+            )
+        ) {
+            syncNow(albumIds)
+        }
     }
 
     val syncProgress = mediaCacheRepository.syncProgress
+}
+
+internal fun isAnyAlbumSyncStale(
+    albumIds: List<String>,
+    states: List<AlbumSyncState>,
+    intervalMinutes: Int,
+    now: Long,
+): Boolean {
+    val staleAfterMillis = intervalMinutes.coerceAtLeast(60) * 60_000L
+    val statesByAlbum = states.associateBy(AlbumSyncState::albumId)
+    return albumIds.any { albumId ->
+        val lastSyncedAt = statesByAlbum[albumId]?.lastSyncedAt ?: 0L
+        now - lastSyncedAt >= staleAfterMillis
+    }
 }

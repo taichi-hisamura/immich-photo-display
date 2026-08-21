@@ -8,9 +8,11 @@ import kotlinx.coroutines.flow.StateFlow
 interface MediaCacheRepository {
     // Cached assets
     suspend fun getCachedAssets(albumId: String): Result<List<CachedAsset>>
+    suspend fun getCachedAsset(assetId: String): CachedAsset?
     suspend fun getAllCachedAssets(): Result<List<CachedAsset>>
     suspend fun upsertAssets(assets: List<CachedAsset>)
     suspend fun removeAssets(assetIds: List<String>)
+    suspend fun removeAlbumAssets(albumId: String, assetIds: List<String>)
     suspend fun clearAlbum(albumId: String)
     suspend fun clearAll()
 
