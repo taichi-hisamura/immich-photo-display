@@ -1,4 +1,9 @@
-# ImmichFrame — Native Android Photo Frame for Immich
+# Immich Frame Low Bandwidth — metered Android fork
+
+> This is a low-bandwidth fork of ImmichFrame v0.5.0 for a dedicated,
+> SIM-connected photo frame. It stores preview images only, excludes videos,
+> uses complete paginated album sync, and disables upstream self-update. See
+> [the fork profile](docs/low-bandwidth-profile.md) for normative behavior.
 
 A native Android slideshow app that connects directly to your Immich server.
 No intermediary Docker container, no WebView, no second API key.
@@ -25,8 +30,7 @@ lets you pick which album(s) to display, and remembers your choice.
 - Album picker with multi-select
 - Fullscreen slideshow with crossfade transitions
 - Configurable interval, transition speed, fill mode (Contain/Cover)
-- Video playback with mute and skip options (Media3/ExoPlayer)
-- Animated GIF playback in the slideshow (Coil GifDecoder; GIFs load from `/original` to preserve animation)
+- Image-only playback; videos are excluded and GIFs use a static preview
 - Draggable clock overlay with configurable size, 12h/24h format, optional seconds, snap-to-grid, and orbital burn-in motion (when photo animations are enabled)
 - Photo animations (Ken Burns: zoom in/out, pan left/right/up/down, or random) — also serves as burn-in protection
 - Adaptive background (fills letterbox bars with each photo's edge colors as a gradient)
@@ -34,16 +38,16 @@ lets you pick which album(s) to display, and remembers your choice.
 - Progress bar showing time remaining per image
 - Start on boot (with SYSTEM_ALERT_WINDOW permission for Android 10+ BAL exemption, plus OEM autostart permission detection)
 - Launcher mode (Home replacement) — the most reliable boot method for dedicated photo frames; bypasses BOOT_COMPLETED entirely
-- Self-update via GitHub releases with manual "Check Now" button (sideloaded installs only)
-- Offline media cache with background sync (Room + WorkManager) — slideshow keeps playing from cached files when the server is unreachable; album deletions are detected and the user is sent back to album selection
+- Fork self-update disabled until a fork-owned signed release channel exists
+- Preview-only offline cache with a six-hour default background sync
 - Night Mode — automatically dims the screen during set hours (brightness-based fallback for devices without built-in scheduled power on/off)
 - Auto-resumes last album on launch
 - Interactive onboarding tour with coachmark overlays — guides users through setup, album selection, slideshow controls (including back-to-albums and update indicator), and settings; replayable per-screen ("Show Tour Again") or globally ("Reset All Tours")
 - Adaptive launcher icon with day/night variants and Android 13+ monochrome (themed icon) support; dedicated debug-build variant (amber background); separate background-free logo drawable for the Setup screen
 - Localized into 13 languages (en, ar, zh, nl, fr, de, it, ja, ko, pl, pt, ru, es)
 - **In-app API key generation** — log in with email/password or OAuth; the app auto-creates a scoped key (no external scripts needed)
-- **Permission verification** — after setup, the app probes all 5 required endpoints to verify the key works; missing permissions are shown in Settings with per-feature impact (e.g., video playback locked off if `asset.download` is missing)
-- Scoped API key (5 permissions: album.read, asset.read, asset.view, asset.download, user.read)
+- **Permission verification** for the four image-only endpoints
+- Scoped API key (album.read, asset.read, asset.view, user.read)
 - API key stored encrypted on-device (AES-256, Android Keystore)
 - Biometric-protected API key reveal & copy (fingerprint / face / PIN)
 - Media selection grid — biometric-gated, tap to show/hide individual photos
@@ -80,14 +84,13 @@ then immediately discarded (never stored). OAuth is also supported for
 servers that have it enabled.
 
 Alternatively, you can create a key manually in Immich under
-**User Settings → API Keys**. The key needs 5 permissions:
+**User Settings → API Keys**. The key needs 4 permissions:
 
 | Permission | Used for |
 |---|---|
 | `album.read` | List albums, get album info |
 | `asset.read` | Search/list assets in albums |
 | `asset.view` | View thumbnails and previews |
-| `asset.download` | Download originals (video playback) |
 | `user.read` | Validate the key during setup |
 
 > Requires Immich **v1.135+** for scoped keys. On older versions, any API key
@@ -127,7 +130,7 @@ To verify an existing key's permissions against the app's endpoints:
 
 ## Tech Stack
 
-Kotlin 2.1 · Jetpack Compose · Retrofit 2 · Coil 3 (+ GifDecoder) · Media3 ExoPlayer · Hilt · DataStore · Palette
+Kotlin · Jetpack Compose · Retrofit · Coil 3 · Hilt · Room · WorkManager · DataStore · Palette
 
 ## Requirements
 

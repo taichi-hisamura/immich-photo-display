@@ -1,5 +1,8 @@
 # Visual Guide
 
+> **Low-bandwidth fork:** [the fork profile](low-bandwidth-profile.md) takes
+> precedence over screenshots or text showing optional video playback.
+
 Screenshot reference for ImmichFrame. Each screen is shown with its states, and
 **every setting is paired with the visual outcome it produces** in the running
 slideshow (where applicable).
@@ -90,8 +93,8 @@ the screenshot that demonstrates the outcome.
 |---|---|---|
 | **Slideshow Interval** (5–120 s) | 30 s | Controls how long each photo stays before auto-advancing. Visible as the progress bar in the slideshow bottom bar (see [Controls visible](#3-slideshow-states)). |
 | **Shuffle** | On | Randomizes photo order. Off = sequential (album order). No visible UI difference — affects playback sequence only. |
-| **Skip Videos** | On | Only photos are shown; video assets are filtered out. Locked ON if the API key lacks the `asset.download` permission. |
-| **Muted** | On | Silences video audio during playback. |
+| **Skip Videos** | On (locked) | Only photos are synchronized and shown. |
+| **Muted** | On | Retained from upstream; no effect in image-only mode. |
 
 ---
 
@@ -234,7 +237,7 @@ permissions granted):
 |---|---|
 | **Server URL** | Editable inline. The Immich server address. |
 | **API Key** | Shown masked (`••••`). Tapping **Edit** empties the field (never pre-populated). When set, biometric-gated **Reveal** and **Copy** buttons appear. |
-| **API Key Permissions** card | Lists all 5 required permissions with ✓ (granted), ✗ (denied), or ? (unknown). **Re-check** button re-probes all endpoints. Uses an error-colored background when a blocking permission is missing. |
+| **API Key Permissions** card | Lists the 4 required read/view permissions with ✓ (granted), ✗ (denied), or ? (unknown). **Re-check** re-probes all endpoints. |
 
 **Permission gating:**
 
@@ -244,7 +247,6 @@ permissions granted):
 | Album read | `album.read` | Yes | Setup blocked. |
 | Asset read | `asset.read` | Yes | Setup blocked. |
 | Asset view | `asset.view` | Yes | Setup blocked. |
-| Asset download | `asset.download` | No (optional) | **Skip Videos** toggle locked ON; media cache skips downloading originals. |
 
 > No in-slideshow visual outcome — this section manages server credentials and
 > permission status. Its effect is that the slideshow can connect and display

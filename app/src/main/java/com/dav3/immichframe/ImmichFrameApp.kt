@@ -6,13 +6,17 @@ import androidx.work.Configuration
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
-import coil3.gif.GifDecoder
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import com.dav3.immichframe.data.remote.buildImmichMediaClient
+import com.dav3.immichframe.domain.repository.SettingsRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -26,6 +30,9 @@ class ImmichFrameApp :
 
     @Inject
     lateinit var syncScheduler: com.dav3.immichframe.data.sync.SyncScheduler
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -42,14 +49,19 @@ class ImmichFrameApp :
         }
     }
 
-    /**
-     * Provides the global [ImageLoader] used by all `AsyncImage` composables.
-     * Registers [GifDecoder] so animated GIFs (loaded from the `/original`
-     * endpoint) are decoded frame-by-frame instead of collapsing to a still.
-     */
+    /** Provides the global preview-only [ImageLoader] used by `AsyncImage`. */
     override fun newImageLoader(context: PlatformContext): ImageLoader = ImageLoader.Builder(context)
         .components {
-            add(GifDecoder.Factory())
+            add(
+                OkHttpNetworkFetcherFactory(
+                    callFactory = {
+                        buildImmichMediaClient(
+                            serverUrl = { runBlocking { settingsRepository.serverUrl.first() } },
+                            apiKey = { runBlocking { settingsRepository.apiKey.first() } },
+                        )
+                    },
+                ),
+            )
         }
         .crossfade(true)
         .build()

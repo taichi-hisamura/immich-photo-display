@@ -92,10 +92,6 @@ fun SettingsContent(
     onCheckForUpdate: () -> Unit,
 ) {
     val s = state.settings
-    val videoDownloadDenied = state.permissionStatus
-        ?.let { it.statuses[RequiredPermission.ASSET_DOWNLOAD] == PermissionStatus.Denied }
-        ?: false
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,7 +99,7 @@ fun SettingsContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        PlaybackSection(s, onUpdateInterval, onToggleShuffle, onToggleSkipVideos, onToggleMuted, videoDownloadDenied)
+        PlaybackSection(s, onUpdateInterval, onToggleShuffle, onToggleSkipVideos, onToggleMuted)
         HorizontalDivider()
         PhotoAnimationsSection(s, onTogglePhotoAnimations, onToggleAnimation)
         HorizontalDivider()
@@ -134,7 +130,6 @@ private fun PlaybackSection(
     onToggleShuffle: () -> Unit,
     onToggleSkipVideos: () -> Unit,
     onToggleMuted: () -> Unit,
-    videoDownloadDenied: Boolean = false,
 ) {
     SectionHeaderPreview(stringResource(R.string.section_playback))
     Text("${stringResource(R.string.interval)}: ${s.intervalSeconds}s")
@@ -152,14 +147,10 @@ private fun PlaybackSection(
     )
     SwitchItemPreview(
         title = stringResource(R.string.skip_videos),
-        subtitle = if (videoDownloadDenied) {
-            stringResource(R.string.skip_videos_locked_desc)
-        } else {
-            stringResource(R.string.skip_videos_desc)
-        },
-        checked = s.skipVideos,
-        onToggle = onToggleSkipVideos,
-        enabled = !videoDownloadDenied,
+        subtitle = stringResource(R.string.low_bandwidth_images_only_desc),
+        checked = true,
+        onToggle = {},
+        enabled = false,
     )
     SwitchItemPreview(
         title = stringResource(R.string.muted),
@@ -395,16 +386,7 @@ private fun MediaCacheSection(
     onSyncNow: () -> Unit,
 ) {
     SectionHeaderPreview(stringResource(R.string.section_media_cache))
-    val intervalValues = remember {
-        buildList {
-            add(1)
-            var v = 5
-            while (v <= 480) {
-                add(v)
-                v += 5
-            }
-        }
-    }
+    val intervalValues = remember { listOf(60, 180, 360, 720, 1440) }
     val currentIntervalIndex = intervalValues.indexOf(s.syncIntervalMinutes).coerceAtLeast(0)
     SwitchItemPreview(
         title = stringResource(R.string.auto_sync),

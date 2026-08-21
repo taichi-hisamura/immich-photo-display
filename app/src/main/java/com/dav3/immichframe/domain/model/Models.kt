@@ -12,10 +12,7 @@ data class Asset(
     val type: AssetType,
     val lastModified: Long = 0,
     val originalMimeType: String? = null,
-) {
-    /** Whether this asset is an animated GIF (needs the /original endpoint for Coil's GifDecoder). */
-    val isGif: Boolean get() = originalMimeType?.equals("image/gif", ignoreCase = true) == true
-}
+)
 
 enum class AssetType { IMAGE, VIDEO }
 
@@ -58,7 +55,7 @@ data class SlideshowSettings(
     val startOnBoot: Boolean = false,
     val launcherMode: Boolean = false,
     val bootVerified: Boolean = false,
-    val autoUpdate: Boolean = true,
+    val autoUpdate: Boolean = false,
     val clockSnapToGrid: Boolean = true,
     val adaptiveBackground: Boolean = false,
     // Ken Burns
@@ -71,7 +68,7 @@ data class SlideshowSettings(
     val animPanDown: Boolean = true,
     // Media Cache
     val autoSync: Boolean = true,
-    val syncIntervalMinutes: Int = 30,
+    val syncIntervalMinutes: Int = 360,
     // Night Mode (brightness-based display schedule)
     val nightMode: Boolean = false,
     val nightModeStart: Int = 1320, // minutes since midnight (22:00)

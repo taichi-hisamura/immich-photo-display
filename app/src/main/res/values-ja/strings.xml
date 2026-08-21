@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Immich Media Frame</string>
+    <string name="app_name">Immich Frame Low Bandwidth</string>
 
     <!-- Sections -->
     <string name="section_playback">再生</string>

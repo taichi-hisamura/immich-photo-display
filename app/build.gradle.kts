@@ -10,9 +10,10 @@ plugins {
 android {
     namespace = "com.dav3.immichframe"
     compileSdk = 37
+    compileSdkMinor = 0
 
     defaultConfig {
-        applicationId = "com.dav3.immichframe"
+        applicationId = "com.familyphotoframe.immichframe.lowbandwidth"
         minSdk = 26
         targetSdk = 37
         versionCode = (System.currentTimeMillis() / 1000).toInt()
@@ -26,6 +27,9 @@ android {
                 commandLine("git", "rev-parse", "HEAD")
             }.standardOutput.asText.getOrElse("").trim().take(40)}\"",
         )
+        // Disabled until this fork has its own signed GitHub release channel.
+        // This prevents installing or downloading upstream APKs by mistake.
+        buildConfigField("boolean", "SELF_UPDATE_ENABLED", "false")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -168,7 +172,6 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
-    implementation(libs.coil.gif)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
@@ -197,6 +200,8 @@ dependencies {
 
     // Screenshot testing (JVM — renders Compose Previews without an emulator)
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)

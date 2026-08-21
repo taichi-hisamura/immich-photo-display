@@ -98,8 +98,10 @@ constructor(
                 localFilePaths.putAll(cacheRepo.getAssetThumbnailPaths(assets.map { it.id }))
             }
 
+            val uniqueAssets = assets.distinctBy(Asset::id)
+
             _uiState.value = MediaSelectionUiState(
-                assets = assets.sortedByDescending { it.lastModified },
+                assets = uniqueAssets.sortedByDescending { it.lastModified },
                 toggledIds = toggledIds,
                 newItemsShown = newItemsShown,
                 skipVideos = skipVideos,

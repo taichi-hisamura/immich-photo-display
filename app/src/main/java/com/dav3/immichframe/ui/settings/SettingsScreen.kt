@@ -241,20 +241,12 @@ fun SettingsScreen(
                     checked = s.shuffle,
                     onToggle = { viewModel.toggleShuffle() },
                 )
-                val videoDownloadDenied = state.permissionStatus
-                    ?.let { it.statuses[RequiredPermission.ASSET_DOWNLOAD] == PermissionStatus.Denied }
-                    ?: false
-
                 SwitchItem(
                     title = stringResource(R.string.skip_videos),
-                    subtitle = if (videoDownloadDenied) {
-                        stringResource(R.string.skip_videos_locked_desc)
-                    } else {
-                        stringResource(R.string.skip_videos_desc)
-                    },
-                    checked = s.skipVideos,
-                    onToggle = { viewModel.toggleSkipVideos() },
-                    enabled = !videoDownloadDenied,
+                    subtitle = stringResource(R.string.low_bandwidth_images_only_desc),
+                    checked = true,
+                    onToggle = {},
+                    enabled = false,
                 )
                 SwitchItem(
                     title = stringResource(R.string.muted),
@@ -555,16 +547,7 @@ fun SettingsScreen(
                     SectionHeader(stringResource(R.string.section_media_cache))
                 }
 
-                val intervalValues = remember {
-                    buildList {
-                        add(1)
-                        var v = 5
-                        while (v <= 480) {
-                            add(v)
-                            v += 5
-                        }
-                    }
-                }
+                val intervalValues = remember { listOf(60, 180, 360, 720, 1440) }
                 val currentIntervalIndex = intervalValues.indexOf(s.syncIntervalMinutes).coerceAtLeast(0)
 
                 SwitchItem(
