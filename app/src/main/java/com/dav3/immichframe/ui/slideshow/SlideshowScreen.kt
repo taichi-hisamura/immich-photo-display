@@ -270,13 +270,15 @@ fun SlideshowScreen(
 
     var controlsVisible by remember { mutableStateOf(false) }
 
-    // Force controls visible during onboarding tour, suppress auto-hide
+    // Keep controls visible only while a coachmark is actually on screen.
+    // Having an incomplete, deferred tour step must not leave the controls
+    // permanently visible on a photo frame.
     LaunchedEffect(tourActive) {
         if (tourActive) controlsVisible = true
     }
 
-    LaunchedEffect(controlsVisible, tourActive) {
-        if (controlsVisible && !tourActive) {
+    LaunchedEffect(controlsVisible, tourState.isActive) {
+        if (controlsVisible && !tourState.isActive) {
             delay(5000)
             controlsVisible = false
         }
