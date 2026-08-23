@@ -167,6 +167,10 @@ the header only when scheme, host, port, configured base path, and
 `/api/assets/` path match the configured Immich server. Redirects are disabled
 for all API-key-bearing clients.
 
+The API-key permission probe checks `asset.view` against the first available
+asset across accessible albums. Empty albums are skipped so they do not produce
+a false `Unknown` status for an otherwise valid preview permission.
+
 ## Media Cache (Room + WorkManager)
 
 The app maintains a local Room database (`media_cache_db`) that stores

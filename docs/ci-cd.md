@@ -149,6 +149,15 @@ export SIGNING_KEY_PASSWORD=<password>
 ./gradlew bundleRelease
 ```
 
+> Release builds are signed but intentionally not minified or resource-shrunk.
+> On the supported Android 10 tablet, R8-minified builds crash at startup with a
+> `ClassCastException` in generated Hilt code, including when R8 optimization is
+> disabled. Re-enable R8 only after a reproducing regression test and a verified fix.
+
+> Immediate media-cache synchronization uses a normal one-time WorkManager request,
+> not expedited work. Expedited work requires a foreground notification implementation
+> on Android 10; using it without that implementation terminates the app during sync.
+
 ### API Key Manager Tooling (keymgr)
 
 The production build compiles and releases the `keymgr` cross-platform CLI tool alongside the app artifacts. This tool helps users generate and validate Immich API keys with the exact permissions ImmichFrame requires.

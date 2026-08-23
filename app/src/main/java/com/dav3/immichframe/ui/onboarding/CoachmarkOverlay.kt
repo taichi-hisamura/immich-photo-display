@@ -239,8 +239,13 @@ private fun CoachmarkOverlay(
             )
         } else {
             // Targeted step — place tooltip above or below the spotlight
-            val availableBelow = screenHeightPx - targetRect.bottom - paddingPx - gapPx
-            val availableAbove = targetRect.top - paddingPx - gapPx
+            // A target can be partially beyond the visible window after a
+            // configuration change. Compose rejects negative padding and
+            // height constraints, so clamp all available-space calculations.
+            val availableBelow = (screenHeightPx - targetRect.bottom - paddingPx - gapPx).coerceAtLeast(0f)
+            val availableAbove = (targetRect.top - paddingPx - gapPx).coerceAtLeast(0f)
+            val tooltipTopPadding = (targetRect.bottom + paddingPx + gapPx).coerceAtLeast(0f)
+            val tooltipBottomPadding = (screenHeightPx - targetRect.top + paddingPx + gapPx).coerceAtLeast(0f)
             val placeBelow = availableBelow >= availableAbove
 
             if (placeBelow) {
@@ -250,7 +255,7 @@ private fun CoachmarkOverlay(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
-                            top = with(density) { (targetRect.bottom + paddingPx + gapPx).toDp() },
+                            top = with(density) { tooltipTopPadding.toDp() },
                         ),
                     contentAlignment = Alignment.TopCenter,
                 ) {
@@ -273,7 +278,7 @@ private fun CoachmarkOverlay(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
-                            bottom = with(density) { (screenHeightPx - targetRect.top + paddingPx + gapPx).toDp() },
+                            bottom = with(density) { tooltipBottomPadding.toDp() },
                         ),
                     contentAlignment = Alignment.BottomCenter,
                 ) {

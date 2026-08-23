@@ -68,13 +68,16 @@ android {
             signingConfig = signingConfigs.findByName("sharedDebug")
         }
         release {
+            // R8-minified builds crash at startup on the supported Android 10
+            // tablet with a ClassCastException in generated Hilt code. Keep the
+            // release APK signed, but do not shrink or obfuscate until resolved.
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.findByName("debug")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

@@ -7,6 +7,23 @@ import org.junit.Test
 
 class AssetPaginationTest {
     @Test
+    fun `permission probe skips empty albums to find an asset`() = runBlocking {
+        val searchedAlbumIds = mutableListOf<String>()
+
+        val assetId = findFirstAssetIdForPermissionProbe(listOf("empty", "with-photo")) { albumId ->
+            searchedAlbumIds += albumId
+            SearchMetadataResponse(
+                assets = SearchAssetsDto(
+                    items = if (albumId == "with-photo") listOf(AssetDto(id = "photo")) else emptyList(),
+                ),
+            )
+        }
+
+        assertEquals(listOf("empty", "with-photo"), searchedAlbumIds)
+        assertEquals("photo", assetId)
+    }
+
+    @Test
     fun `fetches every page and preserves request page numbers`() = runBlocking {
         val requestedPages = mutableListOf<Int>()
 

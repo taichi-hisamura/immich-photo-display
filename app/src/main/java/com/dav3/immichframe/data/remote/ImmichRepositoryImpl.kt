@@ -55,8 +55,8 @@ constructor(
      *
      * 1. GET /users/me           → user.read
      * 2. GET /albums             → album.read
-     * 3. POST /search/metadata   → asset.read (needs albumId from step 2)
-     * 4. GET /assets/{id}/thumbnail → asset.view (needs assetId from step 3)
+     * 3. POST /search/metadata   → asset.read (searches accessible albums)
+     * 4. GET /assets/{id}/thumbnail → asset.view (uses the first found asset)
      *
      * If an upstream step fails, downstream probes are marked Unknown.
      */
@@ -112,14 +112,15 @@ constructor(
             return@runCatching PermissionCheckResult(statuses.toMap())
         }
 
-        val firstAlbumId = albums.first().id
-
         // 3. asset.read
         var firstAssetId: String? = null
         try {
-            val search = api.searchAssets(SearchMetadataRequest(albumIds = listOf(firstAlbumId)))
+            // The first accessible album can be empty. Continue through the
+            // list until an asset is available for the asset.view probe.
+            firstAssetId = findFirstAssetIdForPermissionProbe(albums.map(AlbumDto::id)) { albumId ->
+                api.searchAssets(SearchMetadataRequest(albumIds = listOf(albumId)))
+            }
             statuses[RequiredPermission.ASSET_READ] = PermissionStatus.Granted
-            firstAssetId = search.assets.items.firstOrNull()?.id
         } catch (e: retrofit2.HttpException) {
             statuses[RequiredPermission.ASSET_READ] = if (e.code() == 403) {
                 PermissionStatus.Denied
@@ -413,4 +414,19 @@ constructor(
          */
         const val OAUTH_REDIRECT_URI = "com.dav3.immichframe://oauth-callback"
     }
+}
+
+/**
+ * Finds an asset suitable for the asset.view permission probe without assuming
+ * that the first accessible album contains media.
+ */
+internal suspend fun findFirstAssetIdForPermissionProbe(
+    albumIds: Iterable<String>,
+    searchAssets: suspend (String) -> SearchMetadataResponse,
+): String? {
+    for (albumId in albumIds) {
+        val assetId = searchAssets(albumId).assets.items.firstOrNull()?.id
+        if (assetId != null) return assetId
+    }
+    return null
 }

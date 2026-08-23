@@ -7,7 +7,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.dav3.immichframe.domain.model.AlbumSyncState
@@ -95,7 +94,6 @@ class SyncScheduler @Inject constructor(
                     .build(),
             )
             .setInputData(inputData)
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
