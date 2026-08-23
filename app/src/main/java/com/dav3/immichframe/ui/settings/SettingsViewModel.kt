@@ -10,6 +10,7 @@ import com.dav3.immichframe.domain.model.FillMode
 import com.dav3.immichframe.domain.model.PermissionCheckResult
 import com.dav3.immichframe.domain.model.PhotoAnimation
 import com.dav3.immichframe.domain.model.SlideshowSettings
+import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.repository.ImmichRepository
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import com.dav3.immichframe.domain.repository.SettingsRepository
@@ -34,6 +35,8 @@ data class SettingsUiState(
     val apiKey: String = "",
     val permissionStatus: PermissionCheckResult? = null,
     val permissionCheckInProgress: Boolean = false,
+    val syncProgress: SyncProgress? = null,
+    val syncRequested: Boolean = false,
 )
 
 @HiltViewModel
@@ -46,8 +49,9 @@ constructor(
     private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
     private val permissionCheckingFlow = MutableStateFlow(false)
+    private val syncRequestedFlow = MutableStateFlow(false)
 
-    val uiState: StateFlow<SettingsUiState> =
+    private val baseUiState =
         combine(
             settingsRepo.slideshowSettings,
             settingsRepo.serverUrl,
@@ -56,6 +60,11 @@ constructor(
             permissionCheckingFlow,
         ) { slideshow, url, key, perms, checking ->
             SettingsUiState(slideshow, url, key, perms, checking)
+        }
+
+    val uiState: StateFlow<SettingsUiState> =
+        combine(baseUiState, syncScheduler.syncProgress, syncRequestedFlow) { base, progress, requested ->
+            base.copy(syncProgress = progress, syncRequested = requested)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
     val onboardingSteps: StateFlow<Set<String>> =
@@ -247,8 +256,7 @@ constructor(
     }
 
     fun syncNow() = viewModelScope.launch {
-        val settings = settingsRepo.slideshowSettings.first()
         val albumIds = settingsRepo.selectedAlbumIds.first()
-        syncScheduler.syncNow(albumIds)
+        syncRequestedFlow.value = syncScheduler.syncNow(albumIds)
     }
 }

@@ -148,6 +148,7 @@ data class SyncProgress(
     val totalAssets: Int = 0,
     val processedAssets: Int = 0,
     val currentAsset: String = "",
+    val updatedAtMillis: Long = System.currentTimeMillis(),
 ) {
     enum class Phase {
         IDLE,

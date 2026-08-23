@@ -56,7 +56,14 @@ class MediaCacheWorker @AssistedInject constructor(
                 performFullSync(albumIds)
                 ListenableWorker.Result.success()
             } catch (_: Exception) {
-                mediaCacheRepository.clearSyncProgress()
+                mediaCacheRepository.updateSyncProgress(
+                    SyncProgress(
+                        albumIds = albumIds,
+                        currentAlbum = albumIds.lastOrNull().orEmpty(),
+                        phase = SyncProgress.Phase.ERROR,
+                        currentAsset = "Check the connection and try again.",
+                    ),
+                )
                 if (runAttemptCount < MAX_RETRY_ATTEMPTS) {
                     ListenableWorker.Result.retry()
                 } else {
@@ -107,10 +114,16 @@ class MediaCacheWorker @AssistedInject constructor(
         if (goneAlbums.isNotEmpty() && goneAlbums.size == albumIds.size) {
             settingsRepository.setSelectedAlbumIds(emptyList())
         }
-        mediaCacheRepository.clearSyncProgress()
         if (syncErrors.isNotEmpty()) {
             throw SyncFailedException(syncErrors)
         }
+        mediaCacheRepository.updateSyncProgress(
+            SyncProgress(
+                albumIds = albumIds,
+                currentAlbum = albumIds.lastOrNull().orEmpty(),
+                phase = SyncProgress.Phase.COMPLETE,
+            ),
+        )
     }
 
     private suspend fun downloadAndReconcile(

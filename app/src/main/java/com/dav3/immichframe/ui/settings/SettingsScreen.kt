@@ -78,6 +78,7 @@ import com.dav3.immichframe.domain.model.FillMode
 import com.dav3.immichframe.domain.model.PermissionStatus
 import com.dav3.immichframe.domain.model.PhotoAnimation
 import com.dav3.immichframe.domain.model.RequiredPermission
+import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.system.hasOverlayPermission
 import com.dav3.immichframe.domain.system.needsBootPermission
 import com.dav3.immichframe.domain.system.openBootPermissionSettings
@@ -566,8 +567,49 @@ fun SettingsScreen(
                     valueRange = 0f..intervalValues.lastIndex.toFloat(),
                     steps = intervalValues.lastIndex - 1,
                 )
+                val syncProgress = state.syncProgress
+                val syncing = syncProgress?.phase in setOf(
+                    SyncProgress.Phase.FETCHING_METADATA,
+                    SyncProgress.Phase.DOWNLOADING,
+                    SyncProgress.Phase.PROCESSING,
+                )
+                val syncStatus = when (syncProgress?.phase) {
+                    SyncProgress.Phase.COMPLETE -> stringResource(
+                        R.string.sync_status_complete,
+                        SimpleDateFormat("HH:mm", LocalLocale.current.platformLocale)
+                            .format(Date(syncProgress.updatedAtMillis)),
+                    )
+                    SyncProgress.Phase.ERROR -> stringResource(
+                        R.string.sync_status_error,
+                        syncProgress.currentAsset,
+                    )
+                    SyncProgress.Phase.FETCHING_METADATA,
+                    SyncProgress.Phase.DOWNLOADING,
+                    SyncProgress.Phase.PROCESSING,
+                    -> {
+                        val count = if (syncProgress.totalAssets > 0) {
+                            " ${syncProgress.processedAssets}/${syncProgress.totalAssets}"
+                        } else {
+                            ""
+                        }
+                        stringResource(R.string.sync_status_syncing) + count
+                    }
+                    else -> if (state.syncRequested) stringResource(R.string.sync_status_syncing) else null
+                }
+                if (syncStatus != null) {
+                    Text(
+                        text = syncStatus,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (syncProgress?.phase == SyncProgress.Phase.ERROR) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
                 TextButton(
                     onClick = { viewModel.syncNow() },
+                    enabled = !syncing,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.sync_now))

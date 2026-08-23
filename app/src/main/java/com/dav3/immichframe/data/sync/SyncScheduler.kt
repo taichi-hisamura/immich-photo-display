@@ -79,8 +79,8 @@ class SyncScheduler @Inject constructor(
     /**
      * Trigger an immediate one-time sync.
      */
-    fun syncNow(albumIds: List<String>) {
-        if (albumIds.isEmpty()) return
+    fun syncNow(albumIds: List<String>): Boolean {
+        if (albumIds.isEmpty()) return false
 
         val inputData = Data.Builder()
             .putStringArray(MediaCacheWorker.KEY_ALBUM_IDS, albumIds.toTypedArray())
@@ -101,6 +101,7 @@ class SyncScheduler @Inject constructor(
             ExistingWorkPolicy.KEEP,
             workRequest,
         )
+        return true
     }
 
     /**
