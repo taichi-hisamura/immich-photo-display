@@ -1,8 +1,13 @@
 package com.dav3.immichframe.data.sync
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.dav3.immichframe.data.local.MediaCacheRepositoryImpl
@@ -31,6 +36,16 @@ class MediaCacheWorker @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
 ) : CoroutineWorker(context, params) {
     private val previewDownloader = PreviewAssetDownloader()
+
+    /**
+     * Work created by an older app version can remain queued after an update.
+     * Some of those requests were expedited, which makes WorkManager ask this
+     * worker for foreground information on Android 10. Returning a valid
+     * notification lets the old work complete or be replaced instead of
+     * crashing the entire app.
+     */
+    override suspend fun getForegroundInfo(): ForegroundInfo =
+        ForegroundInfo(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
 
     override suspend fun doWork(): ListenableWorker.Result = withContext(Dispatchers.IO) {
         syncMutex.withLock {
@@ -230,11 +245,35 @@ class MediaCacheWorker @AssistedInject constructor(
         }
     }
 
+    private fun createForegroundNotification() = run {
+        ensureForegroundNotificationChannel()
+        NotificationCompat.Builder(applicationContext, FOREGROUND_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
+            .setContentTitle("Immich Media Frame")
+            .setContentText("Synchronizing media cache")
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun ensureForegroundNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = applicationContext.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(
+            NotificationChannel(
+                FOREGROUND_CHANNEL_ID,
+                "Immich Media Frame sync",
+                NotificationManager.IMPORTANCE_LOW,
+            ),
+        )
+    }
+
     companion object {
         const val WORK_NAME = "media_cache_sync"
         const val KEY_ALBUM_IDS = "albumIds"
         const val KEY_INCREMENTAL = "incremental"
         private const val MAX_RETRY_ATTEMPTS = 3
+        private const val FOREGROUND_NOTIFICATION_ID = 1001
+        private const val FOREGROUND_CHANNEL_ID = "media_cache_sync"
         private val syncMutex = Mutex()
     }
 }

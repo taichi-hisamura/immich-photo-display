@@ -171,6 +171,11 @@ The API-key permission probe checks `asset.view` against the first available
 asset across accessible albums. Empty albums are skipped so they do not produce
 a false `Unknown` status for an otherwise valid preview permission.
 
+On Android 10 and later, launcher mode uses `RoleManager.ROLE_HOME` to
+determine whether this app holds the Home role. This avoids false launcher-loss
+warnings where a generic intent resolution returns the system resolver despite
+a persistent Home selection.
+
 ## Media Cache (Room + WorkManager)
 
 The app maintains a local Room database (`media_cache_db`) that stores

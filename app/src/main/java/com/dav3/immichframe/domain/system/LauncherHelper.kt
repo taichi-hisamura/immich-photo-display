@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.app.role.RoleManager
+import android.os.Build
 import com.dav3.immichframe.BuildConfig
 import android.provider.Settings as AndroidSettings
 
@@ -58,14 +60,26 @@ internal fun isLauncherModeEnabled(context: Context): Boolean {
 
 /** Returns true if this app is currently set as the system's default Home. */
 internal fun isDefaultLauncher(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val roleManager = context.getSystemService(RoleManager::class.java)
+        val isHomeRoleAvailable = roleManager?.isRoleAvailable(RoleManager.ROLE_HOME) == true
+        if (isHomeRoleAvailable) {
+            return isHomeRoleHeld(
+                roleAvailable = true,
+                roleHeld = roleManager?.isRoleHeld(RoleManager.ROLE_HOME) == true,
+            )
+        }
+    }
+
+    // Pre-Android 10 fallback. Android 10 and above use RoleManager because
+    // resolveActivity(MATCH_DEFAULT_ONLY) can return ResolverActivity even
+    // when a persistent Home selection exists.
     val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-    val defaultLauncher =
-        context.packageManager.resolveActivity(
-            homeIntent,
-            PackageManager.MATCH_DEFAULT_ONLY,
-        )
+    val defaultLauncher = context.packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
     return defaultLauncher?.activityInfo?.packageName == context.packageName
 }
+
+internal fun isHomeRoleHeld(roleAvailable: Boolean, roleHeld: Boolean): Boolean = roleAvailable && roleHeld
 
 /**
  * Opens the system Home / launcher settings screen

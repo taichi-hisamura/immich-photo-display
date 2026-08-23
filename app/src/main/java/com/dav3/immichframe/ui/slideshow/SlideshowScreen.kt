@@ -2,6 +2,8 @@ package com.dav3.immichframe.ui.slideshow
 
 import android.app.Activity
 import android.net.Uri
+import android.view.MotionEvent
+import android.view.View
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -67,6 +69,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -91,6 +95,9 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private const val FULLSCREEN_REHIDE_DELAY_MILLIS = 1_500L
+private const val RESUME_REHIDE_DELAY_MILLIS = 300L
 
 @Composable
 fun SlideshowScreen(
@@ -126,24 +133,57 @@ fun SlideshowScreen(
         if (state.albumGone) onChangeAlbums()
     }
 
-    // Immersive fullscreen
+    // Fullscreen bars can be revealed by a system gesture, a notification, or
+    // returning to this activity. Re-hide both bars after those events so a
+    // dedicated photo frame does not leave only the navigation bar visible.
     val view = LocalView.current
-    DisposableEffect(s.fullscreen) {
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(s.fullscreen, lifecycleOwner, view) {
         val window = (view.context as? Activity)?.window
-        if (s.fullscreen && window != null) {
-            window.decorView.systemUiVisibility = (
-                android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    or android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
-        } else if (window != null) {
-            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
-        }
-        onDispose {
-            window?.decorView?.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+
+        if (!s.fullscreen || controller == null) {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+            onDispose { }
+        } else {
+            val hideBars = Runnable {
+                controller.hide(WindowInsetsCompat.Type.systemBars())
+            }
+            fun scheduleHide(delayMillis: Long = FULLSCREEN_REHIDE_DELAY_MILLIS) {
+                view.removeCallbacks(hideBars)
+                view.postDelayed(hideBars, delayMillis)
+            }
+
+            controller.systemBarsBehavior =
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            scheduleHide(0)
+
+            val visibilityListener = View.OnSystemUiVisibilityChangeListener {
+                scheduleHide()
+            }
+            val touchListener = View.OnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_UP) {
+                    scheduleHide()
+                }
+                false
+            }
+            val lifecycleObserver = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    scheduleHide(RESUME_REHIDE_DELAY_MILLIS)
+                }
+            }
+
+            view.setOnSystemUiVisibilityChangeListener(visibilityListener)
+            view.setOnTouchListener(touchListener)
+            lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+
+            onDispose {
+                view.removeCallbacks(hideBars)
+                view.setOnSystemUiVisibilityChangeListener(null)
+                view.setOnTouchListener(null)
+                lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+                controller.show(WindowInsetsCompat.Type.systemBars())
+            }
         }
     }
 
@@ -154,7 +194,6 @@ fun SlideshowScreen(
     // activity stops but Compose composition stays alive, so the auto-advance
     // timer and ExoPlayer keep running (audio plays in your pocket). We track
     // the lifecycle and treat "screen active" as a precondition for playback.
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     var isScreenActive by remember { mutableStateOf(true) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
