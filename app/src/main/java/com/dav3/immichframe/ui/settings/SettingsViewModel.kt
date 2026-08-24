@@ -85,9 +85,12 @@ constructor(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
-    val onboardingSteps: StateFlow<Set<String>> =
+    // null distinguishes "not read from DataStore yet" from a genuinely empty
+    // completed set on a fresh installation. Settings uses it to avoid a
+    // transient tour overlay while the persisted state is loading.
+    val onboardingSteps: StateFlow<Set<String>?> =
         settingsRepo.onboardingCompletedSteps
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun markStepCompleted(stepId: String) {
         viewModelScope.launch { settingsRepo.markOnboardingStepCompleted(stepId) }

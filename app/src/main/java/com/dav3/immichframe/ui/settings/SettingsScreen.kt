@@ -217,9 +217,12 @@ fun SettingsScreen(
 
     TourHost(
         screen = TourScreen.SETTINGS,
-        completedSteps = completedSteps,
+        completedSteps = completedSteps.orEmpty(),
         onStepCompleted = viewModel::markStepCompleted,
         onSkipped = { },
+        // Do not briefly show the centered overview step while DataStore is
+        // still loading the already-completed tour IDs.
+        enabled = completedSteps != null,
         tourState = tourState,
         onScrollToTarget = { targetKey ->
             // Scroll the target section header into view

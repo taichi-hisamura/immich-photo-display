@@ -145,6 +145,11 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-08-24** — Settings tour startup. Do not draw a Settings coachmark
+  while its persisted completion state is still loading. A completed tour must
+  not flash briefly when the Settings screen opens; it remains replayable from
+  the existing manual tour control.
+
 - **2026-08-24** — Product name. The user-facing app name is **Immich Photo
   Display** in every locale. The public README describes it as a low-bandwidth
   family photo-display fork of `dave-palt/immich-photo-frame` and explicitly

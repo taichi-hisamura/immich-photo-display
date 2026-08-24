@@ -388,7 +388,9 @@ a user lands on a screen — only steps not yet completed are shown.
   target element (a control or section to spotlight).
 - When the user navigates to a screen, the tour checks which of that screen's
   step IDs are NOT yet in the persisted `onboarding_completed_steps` set. If
-  any remain, the tour auto-starts for those steps.
+  any remain, the tour auto-starts for those steps. The Settings screen waits
+  for that persisted state to load before evaluating the tour, so a completed
+  tour never flashes briefly while the screen opens.
 - The overlay shows a semi-transparent scrim over the screen with a
   rounded-rect spotlight cutout around the target element (if any). A tooltip
   card displays the step title, body, step counter ("Step X of Y"), and

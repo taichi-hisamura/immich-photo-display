@@ -326,6 +326,8 @@ appears:
   auto-hide is suppressed.
 - In Settings, the tour scrolls each target section into view before showing
   its spotlight.
+- Settings waits for the saved tour-completion state before drawing a tour
+  overlay, preventing a completed tour from flashing when the screen opens.
 - Editing server URL or API key does not auto-navigate; the change takes
   effect next time the app fetches data (or when user manually restarts
   the slideshow).

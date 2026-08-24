@@ -81,6 +81,7 @@ fun TourHost(
     completedSteps: Set<String>,
     onStepCompleted: (String) -> Unit,
     onSkipped: () -> Unit,
+    enabled: Boolean = true,
     tourState: TourState = rememberTourState(),
     onScrollToTarget: (suspend (targetKey: String) -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -88,8 +89,8 @@ fun TourHost(
     val allSteps = remember(screen) { TourSteps.forScreen(screen) }
 
     // Steps not yet completed, in declaration order.
-    val pendingSteps = remember(allSteps, completedSteps) {
-        allSteps.filter { it.id !in completedSteps }
+    val pendingSteps = remember(allSteps, completedSteps, enabled) {
+        if (enabled) allSteps.filter { it.id !in completedSteps } else emptyList()
     }
 
     // Keys of targets currently composed on screen. Reading this snapshot
