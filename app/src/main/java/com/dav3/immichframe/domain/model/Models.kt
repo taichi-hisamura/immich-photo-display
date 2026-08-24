@@ -74,6 +74,11 @@ data class SlideshowSettings(
     val nightModeStart: Int = 1320, // minutes since midnight (22:00)
     val nightModeEnd: Int = 420, // minutes since midnight (07:00)
     val nightModeBrightness: Int = 0, // 0-100 percent
+    // Scheduled display sleep (uses the system screen-timeout to turn off)
+    val screenScheduleEnabled: Boolean = false,
+    val screenScheduleOffTime: Int = 1320, // minutes since midnight (22:00)
+    val screenScheduleOnTime: Int = 420, // minutes since midnight (07:00)
+    val screenScheduleSleeping: Boolean = false,
 ) {
     /**
      * Whether the current wall-clock time falls inside the configured night-mode
@@ -87,6 +92,16 @@ data class SlideshowSettings(
         } else {
             // Overnight window, e.g. 22:00→07:00
             now >= nightModeStart || now < nightModeEnd
+        }
+    }
+
+    /** Whether the display-sleep schedule currently suppresses Keep Screen On. */
+    fun isScreenScheduleActive(hourMinute: Int): Boolean {
+        if (!screenScheduleEnabled) return false
+        return if (screenScheduleOffTime < screenScheduleOnTime) {
+            hourMinute in screenScheduleOffTime until screenScheduleOnTime
+        } else {
+            hourMinute >= screenScheduleOffTime || hourMinute < screenScheduleOnTime
         }
     }
 

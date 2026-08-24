@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Circle
@@ -38,6 +39,7 @@ import com.dav3.immichframe.ui.theme.ImmichFrameTheme
 fun AlbumSelectionScreen(
     onStartSlideshow: () -> Unit,
     onSettings: () -> Unit,
+    onBackToSettings: (() -> Unit)? = null,
     viewModel: AlbumSelectionViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -58,10 +60,10 @@ fun AlbumSelectionScreen(
             onToggleAlbum = viewModel::toggleAlbum,
             onRetry = viewModel::retry,
             onStartSlideshow = {
-                viewModel.startSlideshow()
-                onStartSlideshow()
+                viewModel.startSlideshow(onStartSlideshow)
             },
             onSettings = onSettings,
+            onBackToSettings = onBackToSettings,
             tourState = tourState,
         )
     }
@@ -76,19 +78,32 @@ fun AlbumSelectionContent(
     onRetry: () -> Unit,
     onStartSlideshow: () -> Unit,
     onSettings: () -> Unit,
+    onBackToSettings: (() -> Unit)? = null,
     tourState: TourState? = null,
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.select_albums)) },
+                navigationIcon = {
+                    onBackToSettings?.let { onBack ->
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back_to_settings),
+                            )
+                        }
+                    }
+                },
                 actions = {
-                    IconButton(
-                        onClick = onSettings,
-                        modifier = tourState?.let { Modifier.tourTarget("albums_settings_gear", it) }
-                            ?: Modifier,
-                    ) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
+                    if (onBackToSettings == null) {
+                        IconButton(
+                            onClick = onSettings,
+                            modifier = tourState?.let { Modifier.tourTarget("albums_settings_gear", it) }
+                                ?: Modifier,
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
+                        }
                     }
                 },
             )

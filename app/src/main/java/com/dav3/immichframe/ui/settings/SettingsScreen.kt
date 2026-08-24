@@ -81,9 +81,13 @@ import com.dav3.immichframe.domain.model.RequiredPermission
 import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.system.hasOverlayPermission
 import com.dav3.immichframe.domain.system.needsBootPermission
+import com.dav3.immichframe.domain.system.canScheduleExactDisplayAlarms
 import com.dav3.immichframe.domain.system.openBootPermissionSettings
+import com.dav3.immichframe.domain.system.openExactAlarmSettings
 import com.dav3.immichframe.domain.system.openLauncherSettings
 import com.dav3.immichframe.domain.system.openOverlayPermissionSettings
+import com.dav3.immichframe.ui.components.AdminPinPrompt
+import com.dav3.immichframe.ui.components.AdminPinSetupDialog
 import com.dav3.immichframe.ui.onboarding.TourHost
 import com.dav3.immichframe.ui.onboarding.TourScreen
 import com.dav3.immichframe.ui.onboarding.TourSteps
@@ -93,6 +97,16 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import kotlin.math.roundToInt
+
+private enum class SensitiveAction {
+    CHANGE_ALBUMS,
+    EDIT_SERVER_URL,
+    EDIT_API_KEY,
+    TOGGLE_API_KEY_VISIBILITY,
+    COPY_API_KEY,
+    CHANGE_ADMIN_PIN,
+    REMOVE_ADMIN_PIN,
+}
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -127,16 +141,24 @@ fun SettingsScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     var showBootPermissionDialog by remember { mutableStateOf(false) }
     var showOverlayDialog by remember { mutableStateOf(false) }
+    var showSetAdminPinDialog by remember { mutableStateOf(false) }
+    var showRemoveAdminPinDialog by remember { mutableStateOf(false) }
 
     // Track SYSTEM_ALERT_WINDOW ("Display over other apps") permission state.
     // Re-check on every ON_RESUME so the UI refreshes after the user returns
     // from the system permission settings screen.
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasOverlay by remember { mutableStateOf(hasOverlayPermission(context)) }
+    var hasExactAlarmAccess by remember { mutableStateOf(canScheduleExactDisplayAlarms(context)) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 hasOverlay = hasOverlayPermission(context)
+                val previousExactAlarmAccess = hasExactAlarmAccess
+                hasExactAlarmAccess = canScheduleExactDisplayAlarms(context)
+                if (!previousExactAlarmAccess && hasExactAlarmAccess) {
+                    viewModel.refreshDisplaySchedule()
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -146,16 +168,39 @@ fun SettingsScreen(
     var urlDraft by remember(state.serverUrl) { mutableStateOf(state.serverUrl) }
     var keyDraft by remember(state.apiKey) { mutableStateOf(state.apiKey) }
 
-    // API key security: reveal + biometric-gated copy
+    // Only administration actions are PIN-protected. Playback and display
+    // adjustments stay available without the PIN for day-to-day operation.
     var revealedApiKey by remember { mutableStateOf(false) }
-    var showBiometricNotSetupDialog by remember { mutableStateOf(false) }
-    val biometricLauncher = com.dav3.immichframe.ui.components.rememberBiometricLauncher()
+    var pendingSensitiveAction by remember { mutableStateOf<SensitiveAction?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val authTitleKey = stringResource(R.string.biometric_auth_title)
-    val authSubtitleKey = stringResource(R.string.biometric_auth_subtitle_key)
-    val authSubtitleAlbums = stringResource(R.string.biometric_auth_subtitle_albums)
     val apiKeyCopiedText = stringResource(R.string.api_key_copied)
+
+    val performSensitiveAction: (SensitiveAction) -> Unit = { action ->
+        when (action) {
+            SensitiveAction.CHANGE_ALBUMS -> onChangeAlbums()
+            SensitiveAction.EDIT_SERVER_URL -> editingUrl = true
+            SensitiveAction.EDIT_API_KEY -> {
+                keyDraft = ""
+                editingKey = true
+            }
+            SensitiveAction.TOGGLE_API_KEY_VISIBILITY -> revealedApiKey = !revealedApiKey
+            SensitiveAction.COPY_API_KEY -> {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("API Key", state.apiKey))
+                scope.launch { snackbarHostState.showSnackbar(apiKeyCopiedText) }
+            }
+            SensitiveAction.CHANGE_ADMIN_PIN -> showSetAdminPinDialog = true
+            SensitiveAction.REMOVE_ADMIN_PIN -> showRemoveAdminPinDialog = true
+        }
+    }
+    val requestSensitiveAction: (SensitiveAction) -> Unit = { action ->
+        if (state.adminPinConfigured) {
+            pendingSensitiveAction = action
+        } else {
+            performSensitiveAction(action)
+        }
+    }
 
     val tourState = rememberTourState()
     val completedSteps by viewModel.onboardingSteps.collectAsState()
@@ -316,6 +361,44 @@ fun SettingsScreen(
 
                 HorizontalDivider()
 
+                // ============================= DISPLAY SCHEDULE =============================
+                SectionHeader(stringResource(R.string.section_screen_schedule))
+                SwitchItem(
+                    title = stringResource(R.string.screen_schedule),
+                    subtitle = stringResource(R.string.screen_schedule_desc),
+                    checked = s.screenScheduleEnabled,
+                    onToggle = { viewModel.toggleScreenSchedule() },
+                )
+                if (s.screenScheduleEnabled) {
+                    Text(
+                        stringResource(R.string.screen_schedule_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmAccess) {
+                        Text(
+                            stringResource(R.string.screen_schedule_exact_alarm_needed),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        Button(onClick = { openExactAlarmSettings(context) }) {
+                            Text(stringResource(R.string.screen_schedule_open_exact_alarm_settings))
+                        }
+                    }
+                    NightModeTimePicker(
+                        label = stringResource(R.string.screen_schedule_off_time),
+                        minutes = s.screenScheduleOffTime,
+                        onTimeSelected = { viewModel.updateScreenScheduleOffTime(it) },
+                    )
+                    NightModeTimePicker(
+                        label = stringResource(R.string.screen_schedule_on_time),
+                        minutes = s.screenScheduleOnTime,
+                        onTimeSelected = { viewModel.updateScreenScheduleOnTime(it) },
+                    )
+                }
+
+                HorizontalDivider()
+
                 // ============================= NIGHT MODE =============================
                 SectionHeader(stringResource(R.string.section_night_mode))
                 SwitchItem(
@@ -426,6 +509,37 @@ fun SettingsScreen(
                 Box(modifier = Modifier.tourTarget("settings_system_section", tourState)) {
                     SectionHeader(stringResource(R.string.section_system))
                 }
+
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.admin_pin)) },
+                    supportingContent = {
+                        Text(
+                            stringResource(
+                                if (state.adminPinConfigured) {
+                                    R.string.admin_pin_configured
+                                } else {
+                                    R.string.admin_pin_not_configured
+                                },
+                            ),
+                        )
+                    },
+                    trailingContent = {
+                        Row {
+                            if (state.adminPinConfigured) {
+                                TextButton(onClick = { requestSensitiveAction(SensitiveAction.CHANGE_ADMIN_PIN) }) {
+                                    Text(stringResource(R.string.change))
+                                }
+                                TextButton(onClick = { requestSensitiveAction(SensitiveAction.REMOVE_ADMIN_PIN) }) {
+                                    Text(stringResource(R.string.remove))
+                                }
+                            } else {
+                                TextButton(onClick = { showSetAdminPinDialog = true }) {
+                                    Text(stringResource(R.string.set))
+                                }
+                            }
+                        }
+                    },
+                )
 
                 SwitchItem(
                     title = stringResource(R.string.start_on_boot),
@@ -621,14 +735,7 @@ fun SettingsScreen(
                 SectionHeader(stringResource(R.string.section_albums))
 
                 Button(
-                    onClick = {
-                        biometricLauncher.launch(
-                            title = authTitleKey,
-                            subtitle = authSubtitleAlbums,
-                            onNotSetup = { showBiometricNotSetupDialog = true },
-                            onSuccess = { onChangeAlbums() },
-                        )
-                    },
+                    onClick = { requestSensitiveAction(SensitiveAction.CHANGE_ALBUMS) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(Icons.Default.PhotoLibrary, contentDescription = null)
@@ -654,7 +761,7 @@ fun SettingsScreen(
                             draft = urlDraft,
                             onDraftChange = { urlDraft = it },
                             editing = editingUrl,
-                            onEdit = { editingUrl = true },
+                            onEdit = { requestSensitiveAction(SensitiveAction.EDIT_SERVER_URL) },
                             onCancel = {
                                 urlDraft = state.serverUrl
                                 editingUrl = false
@@ -668,8 +775,8 @@ fun SettingsScreen(
 
                         HorizontalDivider()
 
-                        // API Key — secure row: edit empties field, reveal/copy
-                        // are biometric-gated. Key is never shown in plain text
+                        // API Key — edit empties field. The complete screen is PIN-gated,
+                        // and the key is never shown in plain text
                         // in an editable field.
                         // API Key — label on top, value below (full width so
                         // the key can wrap naturally), actions in a row below.
@@ -698,12 +805,7 @@ fun SettingsScreen(
                                     )
                                     Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                                         IconButton(onClick = {
-                                            biometricLauncher.launch(
-                                                title = authTitleKey,
-                                                subtitle = authSubtitleKey,
-                                                onNotSetup = { showBiometricNotSetupDialog = true },
-                                                onSuccess = { revealedApiKey = !revealedApiKey },
-                                            )
+                                            requestSensitiveAction(SensitiveAction.TOGGLE_API_KEY_VISIBILITY)
                                         }) {
                                             Icon(
                                                 if (revealedApiKey) {
@@ -717,23 +819,7 @@ fun SettingsScreen(
                                             )
                                         }
                                         IconButton(onClick = {
-                                            biometricLauncher.launch(
-                                                title = authTitleKey,
-                                                subtitle = authSubtitleKey,
-                                                onNotSetup = { showBiometricNotSetupDialog = true },
-                                                onSuccess = {
-                                                    val clipboard = context
-                                                        .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                                    clipboard.setPrimaryClip(
-                                                        ClipData.newPlainText("API Key", state.apiKey),
-                                                    )
-                                                    scope.launch {
-                                                        snackbarHostState.showSnackbar(
-                                                            apiKeyCopiedText,
-                                                        )
-                                                    }
-                                                },
-                                            )
+                                            requestSensitiveAction(SensitiveAction.COPY_API_KEY)
                                         }) {
                                             Icon(
                                                 Icons.Default.ContentCopy,
@@ -741,8 +827,7 @@ fun SettingsScreen(
                                             )
                                         }
                                         TextButton(onClick = {
-                                            keyDraft = ""
-                                            editingKey = true
+                                            requestSensitiveAction(SensitiveAction.EDIT_API_KEY)
                                         }) { Text(stringResource(R.string.edit)) }
                                     }
                                 } else {
@@ -754,8 +839,7 @@ fun SettingsScreen(
                                             modifier = Modifier.weight(1f),
                                         )
                                         TextButton(onClick = {
-                                            keyDraft = ""
-                                            editingKey = true
+                                            requestSensitiveAction(SensitiveAction.EDIT_API_KEY)
                                         }) { Text(stringResource(R.string.edit)) }
                                     }
                                 }
@@ -863,19 +947,49 @@ fun SettingsScreen(
         )
     }
 
-    if (showBiometricNotSetupDialog) {
+    if (showSetAdminPinDialog) {
+        AdminPinSetupDialog(
+            title = stringResource(
+                if (state.adminPinConfigured) R.string.admin_pin_change_title else R.string.admin_pin_set_title,
+            ),
+            onDismiss = { showSetAdminPinDialog = false },
+            onSave = { pin ->
+                viewModel.setAdminPin(pin)
+                showSetAdminPinDialog = false
+            },
+        )
+    }
+
+    pendingSensitiveAction?.let { action ->
+        AdminPinPrompt(
+            title = stringResource(R.string.admin_pin_unlock_title),
+            message = stringResource(R.string.admin_pin_unlock_message),
+            onDismiss = { pendingSensitiveAction = null },
+            onVerified = { pin, result ->
+                viewModel.verifyAdminPin(pin) { verified ->
+                    if (verified) {
+                        pendingSensitiveAction = null
+                        performSensitiveAction(action)
+                    }
+                    result(verified)
+                }
+            },
+        )
+    }
+
+    if (showRemoveAdminPinDialog) {
         AlertDialog(
-            onDismissRequest = { showBiometricNotSetupDialog = false },
-            title = { Text(stringResource(R.string.biometric_not_setup_title)) },
-            text = { Text(stringResource(R.string.biometric_not_setup_message)) },
+            onDismissRequest = { showRemoveAdminPinDialog = false },
+            title = { Text(stringResource(R.string.admin_pin_remove_title)) },
+            text = { Text(stringResource(R.string.admin_pin_remove_message)) },
             confirmButton = {
                 TextButton(onClick = {
-                    showBiometricNotSetupDialog = false
-                    com.dav3.immichframe.domain.system.BiometricHelper.openSecuritySettings(context)
-                }) { Text(stringResource(R.string.open_settings)) }
+                    viewModel.clearAdminPin()
+                    showRemoveAdminPinDialog = false
+                }) { Text(stringResource(R.string.remove)) }
             },
             dismissButton = {
-                TextButton(onClick = { showBiometricNotSetupDialog = false }) {
+                TextButton(onClick = { showRemoveAdminPinDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

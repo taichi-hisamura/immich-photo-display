@@ -28,6 +28,11 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.util.Base64
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -73,6 +78,10 @@ constructor(
         val NIGHT_MODE_START = intPreferencesKey("night_mode_start")
         val NIGHT_MODE_END = intPreferencesKey("night_mode_end")
         val NIGHT_MODE_BRIGHTNESS = intPreferencesKey("night_mode_brightness")
+        val SCREEN_SCHEDULE_ENABLED = stringPreferencesKey("screen_schedule_enabled")
+        val SCREEN_SCHEDULE_OFF_TIME = intPreferencesKey("screen_schedule_off_time")
+        val SCREEN_SCHEDULE_ON_TIME = intPreferencesKey("screen_schedule_on_time")
+        val SCREEN_SCHEDULE_SLEEPING = stringPreferencesKey("screen_schedule_sleeping")
         val MEDIA_SELECTION_TOGGLED = stringSetPreferencesKey("media_selection_toggled_ids")
         val MEDIA_SELECTION_NEW_SHOWN = stringPreferencesKey("media_selection_new_shown")
         val SERVER_VERSION = stringPreferencesKey("server_version")
@@ -103,7 +112,11 @@ constructor(
 
     private val _apiKey = MutableStateFlow(encPrefs.getString("api_key", "") ?: "")
 
+    private val _adminPinConfigured = MutableStateFlow(encPrefs.contains("admin_pin_hash"))
+
     override val apiKey: Flow<String> = _apiKey.asStateFlow()
+
+    override val adminPinConfigured: Flow<Boolean> = _adminPinConfigured.asStateFlow()
 
     override val selectedAlbumIds: Flow<List<String>> =
         context.appDataStore.data.map {
@@ -153,6 +166,10 @@ constructor(
                 nightModeStart = prefs[Keys.NIGHT_MODE_START] ?: 1320,
                 nightModeEnd = prefs[Keys.NIGHT_MODE_END] ?: 420,
                 nightModeBrightness = prefs[Keys.NIGHT_MODE_BRIGHTNESS] ?: 0,
+                screenScheduleEnabled = prefs[Keys.SCREEN_SCHEDULE_ENABLED]?.toBoolean() ?: false,
+                screenScheduleOffTime = prefs[Keys.SCREEN_SCHEDULE_OFF_TIME] ?: 1320,
+                screenScheduleOnTime = prefs[Keys.SCREEN_SCHEDULE_ON_TIME] ?: 420,
+                screenScheduleSleeping = prefs[Keys.SCREEN_SCHEDULE_SLEEPING]?.toBoolean() ?: false,
             )
         }
 
@@ -247,7 +264,15 @@ constructor(
             it[Keys.NIGHT_MODE_START] = settings.nightModeStart
             it[Keys.NIGHT_MODE_END] = settings.nightModeEnd
             it[Keys.NIGHT_MODE_BRIGHTNESS] = settings.nightModeBrightness
+            it[Keys.SCREEN_SCHEDULE_ENABLED] = settings.screenScheduleEnabled.toString()
+            it[Keys.SCREEN_SCHEDULE_OFF_TIME] = settings.screenScheduleOffTime
+            it[Keys.SCREEN_SCHEDULE_ON_TIME] = settings.screenScheduleOnTime
+            it[Keys.SCREEN_SCHEDULE_SLEEPING] = settings.screenScheduleSleeping.toString()
         }
+    }
+
+    override suspend fun setScreenScheduleSleeping(sleeping: Boolean) {
+        context.appDataStore.edit { it[Keys.SCREEN_SCHEDULE_SLEEPING] = sleeping.toString() }
     }
 
     override suspend fun setMediaSelectionToggledIds(ids: Set<String>) {
@@ -282,6 +307,35 @@ constructor(
         }
     }
 
+    override suspend fun setAdminPin(pin: String) {
+        require(pin.matches(Regex("\\d{6}"))) { "Admin PIN must contain exactly six digits" }
+        val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
+        val verifier = derivePinVerifier(pin, salt)
+        encPrefs.edit()
+            .putString("admin_pin_salt", Base64.getEncoder().encodeToString(salt))
+            .putString("admin_pin_hash", Base64.getEncoder().encodeToString(verifier))
+            .apply()
+        _adminPinConfigured.value = true
+    }
+
+    override suspend fun verifyAdminPin(pin: String): Boolean {
+        val encodedSalt = encPrefs.getString("admin_pin_salt", null) ?: return false
+        val encodedVerifier = encPrefs.getString("admin_pin_hash", null) ?: return false
+        return runCatching {
+            val salt = Base64.getDecoder().decode(encodedSalt)
+            val expected = Base64.getDecoder().decode(encodedVerifier)
+            MessageDigest.isEqual(derivePinVerifier(pin, salt), expected)
+        }.getOrDefault(false)
+    }
+
+    override suspend fun clearAdminPin() {
+        encPrefs.edit()
+            .remove("admin_pin_salt")
+            .remove("admin_pin_hash")
+            .apply()
+        _adminPinConfigured.value = false
+    }
+
     override suspend fun clearAll() {
         context.appDataStore.edit { prefs ->
             // Preserve tour completion — there's a separate "Reset All Tours"
@@ -294,6 +348,18 @@ constructor(
         }
         encPrefs.edit().clear().apply()
         _apiKey.value = ""
+        _adminPinConfigured.value = false
+    }
+
+    private fun derivePinVerifier(pin: String, salt: ByteArray): ByteArray {
+        val spec = PBEKeySpec(pin.toCharArray(), salt, 120_000, 256)
+        return try {
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+                .generateSecret(spec)
+                .encoded
+        } finally {
+            spec.clearPassword()
+        }
     }
 
     private val statusJson = Json { ignoreUnknownKeys = true }

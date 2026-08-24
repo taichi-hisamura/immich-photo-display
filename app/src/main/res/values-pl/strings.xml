@@ -54,7 +54,7 @@
     <string name="night_mode_start">Przyciemnij o</string>
     <string name="night_mode_end">Rozjaśnij o</string>
     <string name="night_mode_brightness">Jasność nocna</string>
-    <string name="night_mode_brightness_hint">Poziom jasności ekranu w godzinach nocnych. 0%% to najciemniej, ale nie całkowicie wyłączone.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Jasność ekranu w godzinach nocnych. Przy 0% ekran jest czarny, a przy 100% używana jest jasność urządzenia.</string>
 
     <!-- Clock -->
     <string name="show_clock">Pokaż zegar</string>

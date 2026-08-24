@@ -51,12 +51,22 @@
     <!-- Night Mode -->
     <string name="section_night_mode">Night Mode</string>
     <string name="night_mode">Night Mode</string>
-    <string name="night_mode_desc">Dim the screen during set hours to reduce power consumption and screen wear at night</string>
-    <string name="night_mode_alt_hint">For best results, prefer your device\'s built-in scheduled power on/off (in system settings) if available. This in-app option is a fallback.</string>
+    <string name="night_mode_desc">Fallback for devices where scheduled display sleep is unavailable. Photos remain visible while the screen is dimmed.</string>
+    <string name="night_mode_alt_hint">Use Display Sleep Schedule normally. Use this mode as a fallback if the device cannot reliably turn the display off.</string>
     <string name="night_mode_start">Dim screen at</string>
     <string name="night_mode_end">Brighten screen at</string>
     <string name="night_mode_brightness">Night brightness</string>
-    <string name="night_mode_brightness_hint">Screen brightness level during night hours. 0%% is darkest, but not fully off.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Brightness during night hours. At 0% the screen is black; at 100% the device brightness is used.</string>
+
+    <!-- Display Sleep Schedule -->
+    <string name="section_screen_schedule">Display Sleep Schedule (Recommended)</string>
+    <string name="screen_schedule">Scheduled display sleep</string>
+    <string name="screen_schedule_desc">Turn off the display at night and wake it silently in the morning</string>
+    <string name="screen_schedule_hint">Set the device screen timeout to 15 seconds. The display turns off after this delay; wake-up is silent. If the device manufacturer delays alarms, use Night Mode as a fallback.</string>
+    <string name="screen_schedule_exact_alarm_needed">This Android version needs Alarms &amp; reminders access for on-time transitions. Without it, the schedule still works but may run late.</string>
+    <string name="screen_schedule_open_exact_alarm_settings">Allow alarms &amp; reminders</string>
+    <string name="screen_schedule_off_time">Turn display off at</string>
+    <string name="screen_schedule_on_time">Wake display at</string>
 
     <!-- Clock -->
     <string name="show_clock">Show Clock</string>
@@ -115,6 +125,23 @@
     <string name="hide">Hide</string>
     <string name="copy">Copy</string>
     <string name="api_key_copied">API key copied to clipboard</string>
+    <string name="admin_pin">Administration PIN</string>
+    <string name="admin_pin_not_configured">Not configured. Settings can currently be changed without a PIN.</string>
+    <string name="admin_pin_configured">Configured. A PIN is required each time Settings is opened.</string>
+    <string name="admin_pin_set_title">Set administration PIN</string>
+    <string name="admin_pin_change_title">Change administration PIN</string>
+    <string name="admin_pin_setup_message">Set a six-digit PIN to protect album selection, server URL, API key, and all other settings. If you forget it, you must clear the application data to regain access.</string>
+    <string name="admin_pin_confirm">Confirm PIN</string>
+    <string name="admin_pin_mismatch">The two PINs do not match.</string>
+    <string name="admin_pin_unlock_title">Enter administration PIN</string>
+    <string name="admin_pin_unlock_message">Enter the six-digit PIN to change the photo frame settings.</string>
+    <string name="admin_pin_incorrect">Incorrect PIN.</string>
+    <string name="admin_pin_remove_title">Remove administration PIN?</string>
+    <string name="admin_pin_remove_message">Settings will be editable without a PIN.</string>
+    <string name="set">Set</string>
+    <string name="change">Change</string>
+    <string name="remove">Remove</string>
+    <string name="unlock">Unlock</string>
     <string name="biometric_auth_title">Authenticate</string>
     <string name="biometric_auth_subtitle_key">Authenticate to view your API key</string>
     <string name="biometric_auth_subtitle_media">Authenticate to manage media selection</string>
@@ -125,6 +152,7 @@
     <!-- Settings UI -->
     <string name="settings">Settings</string>
     <string name="back">Back</string>
+    <string name="back_to_settings">Back to Settings</string>
 
     <!-- Dialogs -->
     <string name="autostart_perm_title">Autostart Permission</string>

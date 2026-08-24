@@ -54,7 +54,7 @@
     <string name="night_mode_start">Atténuer à</string>
     <string name="night_mode_end">Raviver à</string>
     <string name="night_mode_brightness">Luminosité de nuit</string>
-    <string name="night_mode_brightness_hint">Niveau de luminosité de l\'écran pendant les heures nocturnes. 0%% est le plus sombre, mais pas complètement éteint.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Luminosité pendant les heures nocturnes. À 0%, l\'écran est noir ; à 100%, la luminosité de l\'appareil est utilisée.</string>
 
     <!-- Clock -->
     <string name="show_clock">Afficher l\'horloge</string>

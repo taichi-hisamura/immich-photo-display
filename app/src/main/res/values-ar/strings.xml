@@ -54,7 +54,7 @@
     <string name="night_mode_start">تعتيم الساعة عند</string>
     <string name="night_mode_end">إضاءة الشاشة عند</string>
     <string name="night_mode_brightness">سطوع الليل</string>
-    <string name="night_mode_brightness_hint">مستوى سطوع الشاشة خلال ساعات الليل. 0%% هو الأغمق، لكنه ليس مطفأ بالكامل.</string>
+    <string name="night_mode_brightness_hint" formatted="false">سطوع الشاشة خلال ساعات الليل. عند 0% تكون الشاشة سوداء، وعند 100% يُستخدم سطوع الجهاز.</string>
 
     <!-- Clock -->
     <string name="show_clock">إظهار الساعة</string>

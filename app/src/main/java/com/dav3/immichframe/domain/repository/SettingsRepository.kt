@@ -11,6 +11,9 @@ interface SettingsRepository {
     val slideshowSettings: Flow<SlideshowSettings>
     val onboardingCompletedSteps: Flow<Set<String>>
 
+    /** Whether a six-digit in-app PIN protects the administration screens. */
+    val adminPinConfigured: Flow<Boolean>
+
     /** Asset IDs the user has manually toggled in the media-selection grid. */
     val mediaSelectionToggledIds: Flow<Set<String>>
 
@@ -46,6 +49,9 @@ interface SettingsRepository {
 
     suspend fun setSlideshowSettings(settings: SlideshowSettings)
 
+    /** Update only the transient state controlled by the display schedule receiver. */
+    suspend fun setScreenScheduleSleeping(sleeping: Boolean)
+
     suspend fun setMediaSelectionToggledIds(ids: Set<String>)
 
     suspend fun setMediaSelectionNewItemsShown(shown: Boolean)
@@ -55,6 +61,13 @@ interface SettingsRepository {
     suspend fun resetOnboarding()
 
     suspend fun resetOnboardingForScreen(stepIds: Collection<String>)
+
+    /** Stores only a salted verifier; the PIN itself is never persisted. */
+    suspend fun setAdminPin(pin: String)
+
+    suspend fun verifyAdminPin(pin: String): Boolean
+
+    suspend fun clearAdminPin()
 
     suspend fun clearAll()
 }

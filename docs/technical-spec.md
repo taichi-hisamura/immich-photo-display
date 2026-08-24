@@ -78,10 +78,10 @@ immich-android/
 │   │   │   ├── setup/           # Setup screen (domain validation → key generation/manual/OAuth)
 │   │   │   ├── albums/          # Album picker
 │   │   │   ├── slideshow/       # Slideshow player (images, video, clock)
-│   │   │   ├── media/           # Media selection grid (biometric-gated)
+│   │   │   ├── media/           # Internal media selection grid (not exposed in this fork UI)
 │   │   │   ├── settings/        # Settings screen
 │   │   │   │   └── update/          # Update ViewModel (dialog is in slideshow)
-│   │   │   ├── components/      # Reusable composables (BiometricLauncher)
+│   │   │   ├── components/      # Reusable composables (PIN gate and dialogs)
 │   │   │   ├── onboarding/      # Coachmark tour system (TourStep, TourState, CoachmarkOverlay)
 │   │   │   ├── nav/             # Navigation graph
 │   │   │   └── theme/           # Material 3 theme
@@ -132,13 +132,25 @@ UI (Compose) → ViewModel → Repository → Retrofit → Immich API
 - **Night Mode** dims the screen during configured hours via per-window
   brightness (`WindowManager.LayoutParams.screenBrightness`). A
   `LaunchedEffect` in `SlideshowScreen` re-evaluates the current time every 5
-  seconds and sets `screenBrightness` to the configured percentage when inside
-  the night window, or `BRIGHTNESS_OVERRIDE_NONE` (defer to system) outside it.
-  While active, the slideshow is fully hidden behind a black overlay, the
-  adaptive background is forced to pure black, and the auto-advance timer is
-  paused (no photo/video fetching or rendering). The screen is never turned off
-  at the hardware level — this is a brightness-based fallback for devices
-  without built-in scheduled power on/off.
+  seconds. It combines a per-window `screenBrightness` cap with a Compose black
+  overlay: hardware panels can clamp their minimum brightness above black, so
+  the overlay guarantees black at 0%. At 100%, it uses
+  `BRIGHTNESS_OVERRIDE_NONE` to defer to the user's device brightness. The
+  slideshow remains visible and continues playing at intermediate values. The
+  screen is never turned off at the hardware level — this is the fallback when
+  Display Sleep Schedule is not reliable on a device.
+- **Display Sleep Schedule** uses `AlarmManager` to release the slideshow's
+  `keepScreenOn` flag at the off time and a brief `WAKE_LOCK` to wake the panel
+  at the on time. The application supports Android 8+ (minSdk 26). Android
+  12+ devices that do not grant exact-alarm access use
+  `setAndAllowWhileIdle`, so the system or an OEM battery policy can delay a
+  transition; it is therefore preferred only after confirming operation on the
+  target device. Night Mode remains available as the visible, brightness-only
+  fallback.
+  On Android 12+, the manifest declares `SCHEDULE_EXACT_ALARM`; when the user
+  enables the schedule without this special access, Settings displays a button
+  that opens Android's per-app **Alarms & reminders** screen. Returning with
+  access granted immediately replaces the inexact fallback alarms.
 
 ## Package Naming
 
@@ -256,7 +268,9 @@ Setup → Albums → Slideshow
 - `Setup` is the start destination when no credentials are stored.
 - Once credentials + album selection exist, start destination is `Slideshow`.
 - `Settings` is accessible from `Slideshow` and `Albums`.
-- `MediaSelection` is accessible from `Slideshow` (biometric-gated).
+- `MediaSelection` is not exposed from the dedicated-frame slideshow UI.
+- A configured Administration PIN gates only sensitive Settings actions
+  (album selection, server URL, API key, and PIN changes).
 
 ## State Persistence
 
@@ -264,6 +278,7 @@ Setup → Albums → Slideshow
 |---|---|---|---|
 | Server URL | DataStore | `server_url` | String |
 | API Key | EncryptedSharedPreferences | `api_key` | String (encrypted) |
+| Administration PIN verifier | EncryptedSharedPreferences | `admin_pin_salt`, `admin_pin_hash` | Salted PBKDF2-HMAC-SHA256 verifier (encrypted; PIN is not stored) |
 | Selected Album IDs | DataStore | `selected_album_ids` | String set |
 | Slideshow interval | DataStore | `interval_sec` | Int (5–120) |
 | Transition duration | DataStore | `transition_sec` | Float (0–3) |
@@ -298,6 +313,10 @@ Setup → Albums → Slideshow
 | Night Mode Start | DataStore | `night_mode_start` | Int (minutes since midnight, default 1320 = 22:00) |
 | Night Mode End | DataStore | `night_mode_end` | Int (minutes since midnight, default 420 = 07:00) |
 | Night Mode Brightness | DataStore | `night_mode_brightness` | Int (0–100 percent, default 0) |
+| Display Sleep Schedule | DataStore | `screen_schedule_enabled` | String bool (default false) |
+| Display Sleep Off Time | DataStore | `screen_schedule_off_time` | Int (minutes since midnight, default 1320 = 22:00) |
+| Display Sleep On Time | DataStore | `screen_schedule_on_time` | Int (minutes since midnight, default 420 = 07:00) |
+| Display Sleep Active | DataStore | `screen_schedule_sleeping` | String bool (set by the schedule receiver) |
 | Media Selection: Toggled IDs | DataStore | `media_selection_toggled_ids` | StringSet |
 | Media Selection: New Items Shown | DataStore | `media_selection_new_shown` | String bool (default true) |
 | Server Version | DataStore | `server_version` | String (e.g. "v1.135.0") |
@@ -337,6 +356,8 @@ or Android throws `IllegalStateException`.
 | `RECEIVE_BOOT_COMPLETED` | Start-on-boot feature |
 | `REQUEST_INSTALL_PACKAGES` | Self-update via GitHub releases (APK install) |
 | `SYSTEM_ALERT_WINDOW` | Background Activity Launch exemption — required on Android 10+ (API 29+) for `BootReceiver` to call `startActivity()` from a `BOOT_COMPLETED` broadcast. Without it the OS silently blocks the launch. |
+| `WAKE_LOCK` | Briefly wakes the display at the configured Display Sleep Schedule wake time; never held continuously by the scheduler. |
+| `SCHEDULE_EXACT_ALARM` | Android 12+ special access (“Alarms & reminders”) for on-time display-sleep transitions; requested only from the schedule setting. |
 
 ## Localization
 

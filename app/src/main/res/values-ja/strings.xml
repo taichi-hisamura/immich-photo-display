@@ -49,12 +49,22 @@
     <!-- Night Mode -->
     <string name="section_night_mode">ナイトモード</string>
     <string name="night_mode">ナイトモード</string>
-    <string name="night_mode_desc">設定した時間帯に画面を暗くし、夜間の消費電力と画面の劣化を軽減します</string>
-    <string name="night_mode_alt_hint">最良の結果を得るには、デバイスの内蔵スケジュール電源オン/オフ（システム設定）を優先してください（利用可能な場合）。このアプリ内オプションは代替手段です。</string>
+    <string name="night_mode_desc">画面消灯スケジュールが使えない端末向けの代替手段。設定時間中も写真を表示したまま暗くします</string>
+    <string name="night_mode_alt_hint">通常は「画面消灯スケジュール」を使ってください。端末側の制限などで画面を消灯できない場合に、このモードを代替として使えます。</string>
     <string name="night_mode_start">暗くする時間</string>
     <string name="night_mode_end">明るくする時間</string>
     <string name="night_mode_brightness">夜間の明るさ</string>
-    <string name="night_mode_brightness_hint">夜間時間中の画面の明るさレベル。0%%が最も暗いですが、完全にオフではありません。</string>
+    <string name="night_mode_brightness_hint" formatted="false">夜間時間中の画面の明るさレベル。0%では黒画面、100%では端末本体の明るさになります。</string>
+
+    <!-- Display Sleep Schedule -->
+    <string name="section_screen_schedule">画面消灯スケジュール（推奨）</string>
+    <string name="screen_schedule">時間指定で画面を消灯</string>
+    <string name="screen_schedule_desc">夜に画面を消灯し、朝に音を出さず自動で点灯します</string>
+    <string name="screen_schedule_hint">端末本体の画面消灯時間を15秒に設定してください。その時間後に消灯し、起床時は無音です。端末メーカーの省電力設定により、時刻が遅れる場合はナイトモードを代替として使えます。</string>
+    <string name="screen_schedule_exact_alarm_needed">このAndroidでは、時刻どおりに動かすために「アラームとリマインダー」の許可が必要です。許可しない場合も動作しますが、時刻が遅れることがあります。</string>
+    <string name="screen_schedule_open_exact_alarm_settings">アラームとリマインダーを許可</string>
+    <string name="screen_schedule_off_time">画面を消す時間</string>
+    <string name="screen_schedule_on_time">画面を点ける時間</string>
 
     <!-- Clock -->
     <string name="show_clock">時計を表示</string>
@@ -76,6 +86,22 @@
     <string name="auto_update">自動更新</string>
     <string name="auto_update_desc">GitHubで新しいビルドを確認し、自動でダウンロード</string>
 
+    <!-- Media Cache -->
+    <string name="section_media_cache">メディアキャッシュ</string>
+    <string name="auto_sync">自動同期</string>
+    <string name="auto_sync_desc">新しい写真をバックグラウンドでダウンロードし、削除された写真を削除します</string>
+    <string name="sync_interval">同期間隔</string>
+    <string name="sync_interval_desc">アルバムの変更を確認する間隔（1～24時間、既定値は6時間）</string>
+    <string name="sync_now">今すぐ同期</string>
+    <string name="sync_status_idle">待機中</string>
+    <string name="sync_status_syncing">同期中…</string>
+    <string name="sync_status_complete">最終同期: %1$s</string>
+    <string name="sync_status_error">同期に失敗しました: %1$s</string>
+    <string name="cache_size">キャッシュサイズ</string>
+    <string name="clear_cache">キャッシュを削除</string>
+    <string name="clear_cache_confirm">キャッシュ済みの写真をすべて削除します。次回の同期時に再ダウンロードされます。</string>
+    <string name="low_bandwidth_images_only_desc">低通信量版では常に有効です。動画はダウンロードも表示もされません</string>
+
     <!-- Albums -->
     <string name="change_albums">アルバムの選択を変更</string>
 
@@ -91,6 +117,23 @@
     <string name="hide">非表示</string>
     <string name="copy">コピー</string>
     <string name="api_key_copied">APIキーをクリップボードにコピーしました</string>
+    <string name="admin_pin">管理用PIN</string>
+    <string name="admin_pin_not_configured">未設定です。現在はPINなしで設定を変更できます。</string>
+    <string name="admin_pin_configured">設定済みです。設定を開くたびにPINが必要です。</string>
+    <string name="admin_pin_set_title">管理用PINを設定</string>
+    <string name="admin_pin_change_title">管理用PINを変更</string>
+    <string name="admin_pin_setup_message">アルバムの選択、サーバーURL、APIキーなど、すべての設定を保護する6桁のPINを設定します。PINを忘れた場合は、アクセスを取り戻すためにアプリのデータを消去する必要があります。</string>
+    <string name="admin_pin_confirm">PINを再入力</string>
+    <string name="admin_pin_mismatch">2つのPINが一致しません。</string>
+    <string name="admin_pin_unlock_title">管理用PINを入力</string>
+    <string name="admin_pin_unlock_message">フォトフレームの設定を変更するには、6桁のPINを入力してください。</string>
+    <string name="admin_pin_incorrect">PINが正しくありません。</string>
+    <string name="admin_pin_remove_title">管理用PINを解除しますか？</string>
+    <string name="admin_pin_remove_message">PINなしで設定を変更できるようになります。</string>
+    <string name="set">設定</string>
+    <string name="change">変更</string>
+    <string name="remove">解除</string>
+    <string name="unlock">解除</string>
     <string name="biometric_auth_title">認証</string>
     <string name="biometric_auth_subtitle_key">APIキーを表示するには認証してください</string>
     <string name="biometric_auth_subtitle_media">メディア選択を管理するには認証してください</string>
@@ -101,6 +144,7 @@
     <!-- Settings UI -->
     <string name="settings">設定</string>
     <string name="back">戻る</string>
+    <string name="back_to_settings">設定に戻る</string>
 
     <!-- Dialogs -->
     <string name="autostart_perm_title">自動起動の許可</string>

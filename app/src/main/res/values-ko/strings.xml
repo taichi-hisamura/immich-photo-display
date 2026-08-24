@@ -54,7 +54,7 @@
     <string name="night_mode_start">어둡게 할 시간</string>
     <string name="night_mode_end">밝게 할 시간</string>
     <string name="night_mode_brightness">야간 밝기</string>
-    <string name="night_mode_brightness_hint">야간 시간 동안의 화면 밝기 수준입니다. 0%%가 가장 어둡지만 완전히 꺼지지는 않습니다.</string>
+    <string name="night_mode_brightness_hint" formatted="false">야간 시간의 화면 밝기입니다. 0%에서는 검은 화면이 되고, 100%에서는 기기 밝기를 사용합니다.</string>
 
     <!-- Clock -->
     <string name="show_clock">시계 표시</string>

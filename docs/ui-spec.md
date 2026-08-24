@@ -115,6 +115,9 @@ Shown on first launch or when credentials are missing/invalid.
 - Bottom bar shows count of selected albums + Start button.
 - Start button disabled if no albums selected.
 - Settings gear in top app bar.
+- When entered from Settings to change an existing selection, the gear is
+  replaced with a left **Back to Settings** button. It discards unsaved album
+  toggles; **Start Slideshow** saves them and returns to the slideshow.
 - Loading state: shimmer placeholders while album list loads.
 - **Empty states**:
   - Server reachable but zero albums: centered photo-library icon,
@@ -137,7 +140,9 @@ Shown on first launch or when credentials are missing/invalid.
 └──────────────────────────────┘
 ```
 
-Fullscreen, immersive mode (status bar + nav bar hidden).
+Fullscreen, immersive mode (status bar + nav bar hidden). The same immersive
+policy also applies to setup, album selection, and Settings, so ordinary
+in-app administration does not leave system bars visible.
 
 - Clock overlay appears when enabled. Long-press and drag to reposition.
 - Progress bar at the bottom shows elapsed/remaining time for current image.
@@ -176,6 +181,10 @@ Fullscreen, immersive mode (status bar + nav bar hidden).
 
 Accessible from album selection (gear icon) or slideshow controls (gear icon).
 
+When an administration PIN is configured, a six-digit PIN dialog appears only
+before changing albums, server URL, API key, or the PIN itself. Normal playback
+and display settings remain available without a PIN.
+
 ```
 ┌──────────────────────────────┐
 │  ← Settings v1.2.0           │
@@ -204,14 +213,20 @@ Accessible from album selection (gear icon) or slideshow controls (gear icon).
 │  Fullscreen             [●]  │ ← toggle
 │  Keep Screen On         [●]  │ ← toggle
 │                              │
-│  NIGHT MODE                  │ ← section
+│  DISPLAY SLEEP SCHEDULE      │ ← recommended
+│  Scheduled display sleep [○]│
+│  [Allow alarms & reminders]  │ ← Android 12+ when needed
+│  Turn display off at    22:00│
+│  Wake display at        07:00│
+│                              │
+│  NIGHT MODE (FALLBACK)       │ ← section
 │  Night Mode             [○]  │ ← toggle
-│  "Prefer device's built-in   │ ← helper text (last-resort note)
-│   scheduled power on/off"    │
+│  "Use if display sleep is    │ ← fallback helper text
+│   not reliable on this device"│
 │  Dim screen at          22:00│ ← time picker dialog
 │  Brighten screen at     07:00│ ← time picker dialog
-│  Night brightness: 0%       │
-│  [●─────────────────────]   │ ← slider 0-100%
+│  Night brightness: 0%        │
+│  [●─────────────────────]    │ ← slider 0-100%
 │                              │
 │  Start on Boot          [○]  │ ← toggle (+ overlay & OEM autostart prompts)
 │  Launcher Mode          [○]  │ ← toggle (+ Open Launcher Settings button)
@@ -266,9 +281,17 @@ Accessible from album selection (gear icon) or slideshow controls (gear icon).
 └──────────────────────────────┘
 ```
 
-- Organized into sections: Slideshow, Image, Media Cache, Night Mode, Clock, Albums, Connection, Permissions.
-- **Albums section**: "Change Albums" button is biometric-gated (fingerprint / face / device PIN).
-  Tapping it triggers authentication before navigating to the album picker.
+- Organized into sections: Slideshow, Image, Media Cache, Display Sleep Schedule (recommended), Night Mode (fallback), Clock, Albums, Connection, Permissions.
+- **Display Sleep Schedule**: On Android 12+, when the system has not granted
+  the app's **Alarms & reminders** special access, the expanded setting shows
+  an error-coloured explanation and an **Allow alarms & reminders** button.
+  It opens the operating system's per-app permission screen; returning with
+  access granted replaces the schedule's inexact alarms automatically.
+- **System section**: Administration PIN can be set, changed, or removed. A
+  configured six-digit PIN protects sensitive administration actions without
+  requiring Android device lock.
+- **Albums section**: "Change Albums" returns to the album picker after PIN
+  confirmation when an Administration PIN is configured.
 - Changes saved immediately to DataStore (no save button needed).
 - "Test Connection" works same as setup screen.
 - **API Key Permissions card** (below Connection): shows ✓/✗/? for each of the 4
@@ -307,8 +330,8 @@ appears:
   effect next time the app fetches data (or when user manually restarts
   the slideshow).
 - API key **Edit** empties the field for security (no pre-population);
-  **Reveal** and **Copy** buttons appear when the key is set and require
-  biometric / device-PIN authentication.
+  **Reveal** and **Copy** buttons appear when the key is set and request the
+  Administration PIN when configured.
 - Changing selected albums navigates back to the album picker.
 - Auto-Update toggle is hidden when installed from Play Store
   (`getInstallSourceInfo() == "com.android.vending"`).

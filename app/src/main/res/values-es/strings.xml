@@ -54,7 +54,7 @@
     <string name="night_mode_start">Atenuar pantalla a las</string>
     <string name="night_mode_end">Aclarar pantalla a las</string>
     <string name="night_mode_brightness">Brillo nocturno</string>
-    <string name="night_mode_brightness_hint">Nivel de brillo de la pantalla durante las horas nocturnas. 0%% es lo más oscuro, pero no completamente apagado.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Brillo de pantalla durante las horas nocturnas. Con 0% la pantalla queda negra; con 100% se usa el brillo del dispositivo.</string>
 
     <!-- Clock -->
     <string name="show_clock">Mostrar reloj</string>

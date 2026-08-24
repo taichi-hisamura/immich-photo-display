@@ -40,7 +40,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Launcher mode (Home replacement) — the most reliable boot method for dedicated photo frames; bypasses BOOT_COMPLETED entirely
 - Fork self-update disabled until a fork-owned signed release channel exists
 - Preview-only offline cache with a six-hour default background sync
-- Night Mode — automatically dims the screen during set hours (brightness-based fallback for devices without built-in scheduled power on/off)
+- Display Sleep Schedule — recommended: turns the display off after the device timeout and wakes it silently at configured daily times; on Android 12+ it guides the user to grant Alarms & reminders for on-time transitions
+- Night Mode — fallback: keeps photos visible while dimming the screen during set hours when display sleep is not reliable
 - Auto-resumes last album on launch
 - Interactive onboarding tour with coachmark overlays — guides users through setup, album selection, slideshow controls (including back-to-albums and update indicator), and settings; replayable per-screen ("Show Tour Again") or globally ("Reset All Tours")
 - Adaptive launcher icon with day/night variants and Android 13+ monochrome (themed icon) support; dedicated debug-build variant (amber background); separate background-free logo drawable for the Setup screen
@@ -49,8 +50,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - **Permission verification** for the four image-only endpoints
 - Scoped API key (album.read, asset.read, asset.view, user.read)
 - API key stored encrypted on-device (AES-256, Android Keystore)
-- Biometric-protected API key reveal & copy (fingerprint / face / PIN)
-- Media selection grid — biometric-gated, tap to show/hide individual photos
+- Optional six-digit in-app administration PIN protects album selection,
+  server URL, and API key changes (works without device screen lock)
 
 ## Screenshots
 

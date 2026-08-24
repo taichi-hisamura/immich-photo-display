@@ -145,6 +145,34 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-08-24** — Album-selection return path. The picker is shared by
+  first-run setup and Settings. When opened from Settings, replace the
+  duplicate settings gear with a visible **Back to Settings** action; it must
+  discard temporary toggles. Persist selections only on **Start Slideshow**.
+  Updated: navigation, album picker UI, and user-facing specifications.
+
+- **2026-08-24** — Immersive administration. Status and navigation bars are
+  not needed for ordinary photo-frame operation, including Settings. Apply the
+  same fullscreen policy to every in-app destination; a swipe may reveal the
+  bars transiently and they auto-hide again. Updated: activity display policy
+  and user-facing specifications.
+
+- **2026-08-24** — Administration protection. The TB-X606X uses no Android
+  screen lock, so device-credential/biometric prompts cannot protect frame
+  administration. Remove the slideshow's direct album and media-selection
+  buttons. Add an optional six-digit in-app Administration PIN for sensitive
+  actions only: album selection, server URL, API-key, and PIN changes. Normal
+  display and playback settings remain accessible without it.
+  Store only an encrypted salted PIN verifier; forgotten-PIN recovery is app
+  data clearing. Updated: functional specification and settings/navigation UI.
+
+- **2026-08-24** — Display scheduling priority. Display Sleep Schedule is the
+  preferred overnight option. Night Mode is the fallback for devices where an
+  alarm-driven wake/sleep transition is not reliable; it dims the visible
+  slideshow and must not replace it with a black screen. Its start and end
+  times are independent. Updated: settings implementation and user-facing
+  documentation.
+
 - **2026-08-21** — Low-bandwidth family photo-frame fork. The fork targets
   unattended TB-X606X devices on metered SIM connections. Offline media sync
   must cache preview images rather than originals, never cache videos, avoid

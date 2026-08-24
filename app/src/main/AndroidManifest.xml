@@ -9,6 +9,10 @@
     <!-- SYSTEM_ALERT_WINDOW: required on Android 10+ to start an Activity from
          a BOOT_COMPLETED BroadcastReceiver (Background Activity Launch exemption). -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Android 12+: enables the user-granted "Alarms & reminders" special
+         access required for exact daily display wake/sleep transitions. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".ImmichFrameApp"
@@ -62,6 +66,15 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".ScreenScheduleReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.familyphotoframe.immichframe.lowbandwidth.action.SLEEP_DISPLAY" />
+                <action android:name="com.familyphotoframe.immichframe.lowbandwidth.action.WAKE_DISPLAY" />
             </intent-filter>
         </receiver>
 

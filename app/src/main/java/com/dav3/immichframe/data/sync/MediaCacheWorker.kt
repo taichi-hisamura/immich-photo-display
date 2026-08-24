@@ -44,8 +44,7 @@ class MediaCacheWorker @AssistedInject constructor(
      * notification lets the old work complete or be replaced instead of
      * crashing the entire app.
      */
-    override suspend fun getForegroundInfo(): ForegroundInfo =
-        ForegroundInfo(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
+    override suspend fun getForegroundInfo(): ForegroundInfo = ForegroundInfo(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
 
     override suspend fun doWork(): ListenableWorker.Result = withContext(Dispatchers.IO) {
         syncMutex.withLock {

@@ -54,7 +54,7 @@
     <string name="night_mode_start">Dimmen um</string>
     <string name="night_mode_end">Aufhellen um</string>
     <string name="night_mode_brightness">Nachthelligkeit</string>
-    <string name="night_mode_brightness_hint">Bildschirmhelligkeit während der Nachtstunden. 0%% ist am dunkelsten, aber nicht komplett aus.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Bildschirmhelligkeit während der Nachtstunden. Bei 0% ist der Bildschirm schwarz, bei 100% wird die Gerätehelligkeit verwendet.</string>
 
     <!-- Clock -->
     <string name="show_clock">Uhr anzeigen</string>

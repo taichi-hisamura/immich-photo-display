@@ -2,8 +2,6 @@ package com.dav3.immichframe.ui.slideshow
 
 import android.app.Activity
 import android.net.Uri
-import android.view.MotionEvent
-import android.view.View
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -27,9 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -69,8 +65,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -96,14 +90,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private const val FULLSCREEN_REHIDE_DELAY_MILLIS = 1_500L
-private const val RESUME_REHIDE_DELAY_MILLIS = 300L
-
 @Composable
 fun SlideshowScreen(
     onSettings: () -> Unit,
     onChangeAlbums: () -> Unit,
-    onMediaSelection: () -> Unit = {},
     viewModel: SlideshowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -121,10 +111,6 @@ fun SlideshowScreen(
     val updateDismissed by updateVm.updateDismissed.collectAsState()
     var showUpdateDialog by remember { mutableStateOf(false) }
 
-    val authTitle = stringResource(R.string.biometric_auth_title)
-    val authSubtitleMedia = stringResource(R.string.biometric_auth_subtitle_media)
-    val authSubtitleAlbums = stringResource(R.string.biometric_auth_subtitle_albums)
-
     LaunchedEffect(Unit) { viewModel.load() }
 
     // Album deleted on server — bounce back to album selection so the user
@@ -133,59 +119,10 @@ fun SlideshowScreen(
         if (state.albumGone) onChangeAlbums()
     }
 
-    // Fullscreen bars can be revealed by a system gesture, a notification, or
-    // returning to this activity. Re-hide both bars after those events so a
-    // dedicated photo frame does not leave only the navigation bar visible.
+    // MainActivity owns the immersive system-bar policy for every in-app
+    // destination, including Settings and this slideshow.
     val view = LocalView.current
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-    DisposableEffect(s.fullscreen, lifecycleOwner, view) {
-        val window = (view.context as? Activity)?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-
-        if (!s.fullscreen || controller == null) {
-            controller?.show(WindowInsetsCompat.Type.systemBars())
-            onDispose { }
-        } else {
-            val hideBars = Runnable {
-                controller.hide(WindowInsetsCompat.Type.systemBars())
-            }
-            fun scheduleHide(delayMillis: Long = FULLSCREEN_REHIDE_DELAY_MILLIS) {
-                view.removeCallbacks(hideBars)
-                view.postDelayed(hideBars, delayMillis)
-            }
-
-            controller.systemBarsBehavior =
-                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            scheduleHide(0)
-
-            val visibilityListener = View.OnSystemUiVisibilityChangeListener {
-                scheduleHide()
-            }
-            val touchListener = View.OnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_UP) {
-                    scheduleHide()
-                }
-                false
-            }
-            val lifecycleObserver = LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_RESUME) {
-                    scheduleHide(RESUME_REHIDE_DELAY_MILLIS)
-                }
-            }
-
-            view.setOnSystemUiVisibilityChangeListener(visibilityListener)
-            view.setOnTouchListener(touchListener)
-            lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
-
-            onDispose {
-                view.removeCallbacks(hideBars)
-                view.setOnSystemUiVisibilityChangeListener(null)
-                view.setOnTouchListener(null)
-                lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
-                controller.show(WindowInsetsCompat.Type.systemBars())
-            }
-        }
-    }
 
     var isPaused by remember { mutableStateOf(false) }
     var isVideoPaused by remember { mutableStateOf(false) }
@@ -211,9 +148,8 @@ fun SlideshowScreen(
     // Track container size for clock position normalization
     var containerSize by remember { mutableStateOf(IntSize(0, 0)) }
 
-    // Night Mode active state — polled every few seconds, used to:
-    // 1) pause the auto-advance timer below, and
-    // 2) render a black screen instead of photo/video content.
+    // Night Mode active state — polled every few seconds and used to apply a
+    // per-window brightness override while keeping the slideshow visible.
     // A short poll interval keeps the transition snappy when settings change
     // or when crossing the window boundary. The 60s tick used previously meant
     // up to a full minute of latency after returning from Settings.
@@ -248,9 +184,9 @@ fun SlideshowScreen(
         // Videos are immediately "ready" — ExoPlayer handles its own timeline.
         imageReady = state.assets.getOrNull(state.currentIndex)?.type == AssetType.VIDEO
     }
-    LaunchedEffect(state.currentIndex, isPaused, isVideoPaused, s.intervalSeconds, nightActive, imageReady, isScreenActive) {
+    LaunchedEffect(state.currentIndex, isPaused, isVideoPaused, s.intervalSeconds, imageReady, isScreenActive) {
         progress = 0f
-        if (!isPaused && !nightActive && isScreenActive && imageReady && state.assets.isNotEmpty()) {
+        if (!isPaused && isScreenActive && imageReady && state.assets.isNotEmpty()) {
             val currentAsset = state.assets[state.currentIndex]
             if (currentAsset.type == AssetType.VIDEO && !isVideoPaused) {
                 // Video playing normally — VideoPlayer calls viewModel.next() on end
@@ -277,28 +213,33 @@ fun SlideshowScreen(
         if (tourActive) controlsVisible = true
     }
 
-    LaunchedEffect(controlsVisible, tourState.isActive) {
-        if (controlsVisible && !tourState.isActive) {
+    // Returning from Settings can keep this screen in the back stack. Include
+    // lifecycle state so the timeout restarts when the slideshow resumes.
+    LaunchedEffect(controlsVisible, tourState.isActive, isScreenActive) {
+        if (controlsVisible && !tourState.isActive && isScreenActive) {
             delay(5000)
             controlsVisible = false
         }
     }
 
     // Keep screen on
-    LaunchedEffect(s.keepScreenOn) {
-        view.keepScreenOn = s.keepScreenOn
+    LaunchedEffect(s.keepScreenOn, s.screenScheduleSleeping) {
+        view.keepScreenOn = s.keepScreenOn && !s.screenScheduleSleeping
     }
 
-    // Night Mode brightness application — dim the screen when nightActive.
-    // Uses per-window brightness (WindowManager.LayoutParams.screenBrightness).
-    // BRIGHTNESS_OVERRIDE_NONE (-1f) = defer to the system/user brightness.
-    // nightActive is declared + polled above, alongside the auto-advance timer.
+    // A hardware panel can clamp 0f to a visible minimum. Combine the window
+    // brightness cap with the black overlay below to guarantee a black 0%.
+    // At 100%, defer to the brightness selected in the device settings.
     DisposableEffect(nightActive, s.nightModeBrightness) {
         val window = (view.context as? Activity)?.window
         if (window != null) {
             val params = window.attributes
             params.screenBrightness = if (nightActive) {
-                s.nightModeBrightness / 100f
+                if (s.nightModeBrightness >= 100) {
+                    android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                } else {
+                    (s.nightModeBrightness / 100f).coerceAtLeast(0.01f)
+                }
             } else {
                 android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             }
@@ -394,10 +335,6 @@ fun SlideshowScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 when {
-                    // Night Mode active — black screen, no photo/video rendering.
-                    // The timer (above) is also paused via the nightActive flag.
-                    nightActive -> { /* pure black surface, nothing to render */ }
-
                     state.isLoading -> CircularProgressIndicator()
 
                     state.error != null -> Text(state.error!!, color = Color.White)
@@ -444,6 +381,16 @@ fun SlideshowScreen(
                     }
                 }
 
+                // Keep controls above the veil so an intentional touch still
+                // works. With the controls hidden, 0% is completely black.
+                if (nightActive) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 1f - s.nightModeBrightness / 100f)),
+                    )
+                }
+
                 // Draggable clock overlay — positioned from top-left via absolute offset
                 if (s.showClock && currentTime.isNotEmpty()) {
                     Box(
@@ -480,7 +427,8 @@ fun SlideshowScreen(
                     )
                 }
 
-                // Top bar: photo count + mute + albums + settings + close
+                // Top bar: photo count + status + settings. Administration actions
+                // are intentionally available only from the PIN-protected Settings screen.
                 AnimatedVisibility(
                     visible = controlsVisible,
                     enter = fadeIn(),
@@ -498,42 +446,6 @@ fun SlideshowScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(stringResource(R.string.photos_count, state.currentIndex + 1, state.assets.size), color = Color.White)
-                        // Media selection — biometric-gated grid to pick which
-                        // photos are shown in the slideshow
-                        val biometric = com.dav3.immichframe.ui.components.rememberBiometricLauncher()
-                        var showBioNotSetup by remember { mutableStateOf(false) }
-                        IconButton(
-                            onClick = {
-                                biometric.launch(
-                                    title = authTitle,
-                                    subtitle = authSubtitleMedia,
-                                    onNotSetup = { showBioNotSetup = true },
-                                    onSuccess = { onMediaSelection() },
-                                )
-                            },
-                            modifier = Modifier.tourTarget("slideshow_media_selection", tourState),
-                        ) {
-                            Icon(Icons.Default.GridView, "Media selection", tint = Color.White)
-                        }
-                        if (showBioNotSetup) {
-                            AlertDialog(
-                                onDismissRequest = { showBioNotSetup = false },
-                                title = { Text(stringResource(R.string.biometric_not_setup_title)) },
-                                text = { Text(stringResource(R.string.biometric_not_setup_message)) },
-                                confirmButton = {
-                                    TextButton(onClick = {
-                                        showBioNotSetup = false
-                                        com.dav3.immichframe.domain.system.BiometricHelper
-                                            .openSecuritySettings(context)
-                                    }) { Text(stringResource(R.string.open_settings)) }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { showBioNotSetup = false }) {
-                                        Text(stringResource(R.string.cancel))
-                                    }
-                                },
-                            )
-                        }
                         Spacer(Modifier.weight(1f))
                         // Update status icon — shows checking/downloading/ready states.
                         // Clicking opens the install dialog (only when download is ready).
@@ -558,19 +470,6 @@ fun SlideshowScreen(
                             IconButton(onClick = { openOtherLauncher(context) }) {
                                 Icon(Icons.AutoMirrored.Filled.ExitToApp, "Switch to another launcher", tint = Color.White)
                             }
-                        }
-                        IconButton(
-                            onClick = {
-                                biometric.launch(
-                                    title = authTitle,
-                                    subtitle = authSubtitleAlbums,
-                                    onNotSetup = { showBioNotSetup = true },
-                                    onSuccess = { onChangeAlbums() },
-                                )
-                            },
-                            modifier = Modifier.tourTarget("slideshow_albums", tourState),
-                        ) {
-                            Icon(Icons.Default.PhotoLibrary, "Albums", tint = Color.White)
                         }
                         IconButton(
                             onClick = onSettings,

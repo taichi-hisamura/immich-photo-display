@@ -153,18 +153,17 @@ the screenshot that demonstrates the outcome.
 | **Night Mode** | Off | When ON, dims the screen during configured night hours. |
 | **Dim screen at** | 22:00 | When the clock crosses this time, brightness drops to the night level. |
 | **Brighten screen at** | 07:00 | When the clock crosses this time, brightness restores to the system level. |
-| **Night brightness** (0–100%) | 0% | Screen brightness during night hours. 0% = near-black on OLED. |
+| **Night brightness** (0–100%) | 0% | 0% is a black overlay; 100% preserves the device brightness. |
 
 **Outcome — Night Mode active:**
 
-During the night window, the slideshow is hidden behind a black overlay and the
-auto-advance timer is paused:
+During the night window, the slideshow remains visible under a black overlay
+and per-window brightness cap. The auto-advance timer continues normally.
 
 ![Slideshow — night mode active](screenshots/slideshow/nightmode.png)
 
-> The in-app Night Mode is a fallback for devices without native scheduled
-> power on/off. The helper text in settings recommends the device's built-in
-> schedule if available.
+> The in-app Night Mode is a fallback when this app's Display Sleep Schedule
+> cannot operate reliably on a target device.
 
 ---
 

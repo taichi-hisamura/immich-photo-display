@@ -54,7 +54,7 @@
     <string name="night_mode_start">调暗时间</string>
     <string name="night_mode_end">调亮时间</string>
     <string name="night_mode_brightness">夜间亮度</string>
-    <string name="night_mode_brightness_hint">夜间时段的屏幕亮度级别。0%%最暗，但不会完全关闭。</string>
+    <string name="night_mode_brightness_hint" formatted="false">夜间时段的屏幕亮度。0%时屏幕为黑色，100%时使用设备亮度。</string>
 
     <!-- Clock -->
     <string name="show_clock">显示时钟</string>

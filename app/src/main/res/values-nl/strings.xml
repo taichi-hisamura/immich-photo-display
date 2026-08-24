@@ -54,7 +54,7 @@
     <string name="night_mode_start">Dimmen om</string>
     <string name="night_mode_end">Helder maken om</string>
     <string name="night_mode_brightness">Nacht helderheid</string>
-    <string name="night_mode_brightness_hint">Schermhelderheid tijdens nachturen. 0%% is donkerst, maar niet helemaal uit.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Schermhelderheid tijdens nachturen. Bij 0% is het scherm zwart; bij 100% wordt de apparaathelderheid gebruikt.</string>
 
     <!-- Clock -->
     <string name="show_clock">Klok tonen</string>

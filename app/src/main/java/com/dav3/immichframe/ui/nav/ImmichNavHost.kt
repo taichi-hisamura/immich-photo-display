@@ -14,7 +14,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import com.dav3.immichframe.ui.albums.AlbumSelectionScreen
-import com.dav3.immichframe.ui.media.MediaSelectionScreen
 import com.dav3.immichframe.ui.settings.SettingsScreen
 import com.dav3.immichframe.ui.setup.SetupScreen
 import com.dav3.immichframe.ui.slideshow.SlideshowScreen
@@ -28,9 +27,9 @@ import javax.inject.Inject
 object Routes {
     const val SETUP = "setup"
     const val ALBUMS = "albums"
+    const val ALBUMS_FROM_SETTINGS = "albums_from_settings"
     const val SLIDESHOW = "slideshow"
     const val SETTINGS = "settings"
-    const val MEDIA_SELECTION = "media_selection"
 }
 
 @HiltViewModel
@@ -87,9 +86,23 @@ fun ImmichNavHost() {
         composable(Routes.ALBUMS) {
             AlbumSelectionScreen(
                 onStartSlideshow = {
-                    navController.navigate(Routes.SLIDESHOW)
+                    navController.navigate(Routes.SLIDESHOW) {
+                        popUpTo(Routes.ALBUMS) { inclusive = true }
+                    }
                 },
                 onSettings = { navController.navigate(Routes.SETTINGS) },
+            )
+        }
+        composable(Routes.ALBUMS_FROM_SETTINGS) {
+            AlbumSelectionScreen(
+                onStartSlideshow = {
+                    navController.navigate(Routes.SLIDESHOW) {
+                        popUpTo(Routes.SLIDESHOW) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onSettings = { },
+                onBackToSettings = { navController.popBackStack() },
             )
         }
         composable(Routes.SLIDESHOW) {
@@ -100,22 +113,11 @@ fun ImmichNavHost() {
                         popUpTo(Routes.SLIDESHOW) { inclusive = true }
                     }
                 },
-                onMediaSelection = { navController.navigate(Routes.MEDIA_SELECTION) },
-            )
-        }
-        composable(Routes.MEDIA_SELECTION) {
-            MediaSelectionScreen(
-                onBack = { navController.popBackStack() },
             )
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onBack = {
-                    // Navigate to the screen matching the current auth/album
-                    // status instead of popBackStack(), which is a no-op (and
-                    // leaves the user stuck on Settings) when the back stack
-                    // is empty — e.g. after onReset cleared it, or after a
-                    // process-death/restore.
                     val destination = startRoute
                     if (destination != null && destination != Routes.SETTINGS) {
                         navController.navigate(destination) {
@@ -126,9 +128,7 @@ fun ImmichNavHost() {
                     }
                 },
                 onChangeAlbums = {
-                    navController.navigate(Routes.ALBUMS) {
-                        popUpTo(Routes.SETTINGS) { inclusive = true }
-                    }
+                    navController.navigate(Routes.ALBUMS_FROM_SETTINGS)
                 },
                 onReset = {
                     navController.navigate(Routes.SETUP) {

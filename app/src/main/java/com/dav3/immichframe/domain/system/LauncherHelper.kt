@@ -1,10 +1,10 @@
 package com.dav3.immichframe.domain.system
 
+import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.app.role.RoleManager
 import android.os.Build
 import com.dav3.immichframe.BuildConfig
 import android.provider.Settings as AndroidSettings

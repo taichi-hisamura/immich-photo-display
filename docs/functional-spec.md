@@ -62,6 +62,11 @@
 5. Selected album IDs persisted to DataStore.
 6. Slideshow begins.
 
+When this screen was opened from **Settings → Change Album Selection**, its
+top bar shows **Back to Settings** rather than the Settings gear. Choosing it
+returns without saving the temporary selection. **Start Slideshow** is the only
+action that saves the selected albums.
+
 **Empty states:**
 - **Server reachable but zero albums**: shows a "No albums available"
   message with a Retry button (the user may need to create an album in
@@ -123,12 +128,8 @@ Tap the screen to reveal controls:
 - Previous / Next arrows
 - Pause / Play
 - Photo count (current position / total)
-- **Media Selection** (grid icon, next to the photo count) — biometric-gated;
-  opens a grid of all album media where the user can tap thumbnails to
-  show/hide them from the slideshow (see F8)
 - Update status icon (checking / downloading / ready)
 - Launcher switch (apps icon, when Launcher Mode is active)
-- Albums (photo library icon) — biometric-gated; returns to album selection
 - Settings (gear icon)
 
 Controls auto-hide after 5 seconds of no interaction.
@@ -239,6 +240,14 @@ Accessible from:
 - Setup screen (before slideshow starts)
 - In-slideshow controls (gear icon)
 
+When a **six-digit Administration PIN** is configured, it is requested only
+before sensitive actions: changing the album selection, server URL, API key,
+or the PIN itself. Playback, display sleep schedule, Night Mode, and other
+day-to-day frame settings remain adjustable without a PIN. The PIN itself is
+not stored; an encrypted, salted verifier is kept locally. If the PIN is
+forgotten, clearing this app's data is the recovery method and also clears its
+configuration and cache.
+
 Options:
 - **Slideshow Interval** — seconds per image (5–120, default 30)
 - **Image Fit** — Contain (letterbox) or Cover (crop to fill)
@@ -253,22 +262,35 @@ Options:
   reveals individual toggles for: Zoom In, Zoom Out, Pan Left,
   Pan Right, Pan Up, Pan Down, Random. Random picks from other enabled types
   and requires at least one other enabled.
-- **Fullscreen** — hide system bars (default on)
+- **Fullscreen** — hide status and navigation bars across all in-app screens
+  (default on). A swipe can reveal them temporarily; they auto-hide again.
 - **Keep Screen On** — wake lock toggle (default on)
-- **Night Mode** section (brightness-based display schedule, for devices
-  without built-in scheduled power on/off):
-  - **Night Mode** toggle (default off). When on, the screen brightness is
-    reduced during configured night hours. A helper text notes that the
-    device's native scheduled power on/off (if available in system settings)
-    is preferable — this in-app option is a fallback.
+- **Display Sleep Schedule** section (recommended, default off):
+  - **Scheduled display sleep** — releases the app's Keep Screen On policy at
+    the configured off time, allowing the device's configured screen timeout
+    to turn the panel off. It uses a daily Android alarm to wake the panel at
+    the configured on time without sound, vibration, or a notification.
+  - **Turn display off at** / **Wake display at** — independent 24-hour time
+    pickers (defaults: 22:00 / 07:00). Enabling this setting also enables the
+    base Keep Screen On policy so the slideshow remains visible after wake-up.
+  - The device's system screen-timeout must be set to a short value (15
+  seconds recommended). This is not a hardware power-off feature. This app
+    supports Android 8+. On Android 12+, Settings asks for Android's
+    **Alarms & reminders** special access to run at the configured time;
+    without it, the schedule remains available but can run late. Manufacturer
+    battery restrictions can also delay it; Night Mode is the fallback.
+- **Night Mode** section (brightness-only fallback):
+  - **Night Mode** toggle (default off). Use this when Display Sleep Schedule
+    cannot reliably turn the panel off. Photos keep displaying while the
+    per-window brightness is reduced during configured night hours.
   - **Dim screen at** — 24h time picker (default 22:00). When the clock
     crosses this time, brightness drops to the night level.
   - **Brighten screen at** — 24h time picker (default 07:00). When the clock
     crosses this time, brightness restores to the system level.
-  - **Night brightness** — slider 0–100% (default 0%). Screen brightness
-    during night hours. 0% is darkest (near-black on OLED), but the screen is
-    never fully turned off. While night mode is active, the slideshow is
-    hidden behind a black overlay and the auto-advance timer is paused.
+  - **Night brightness** — slider 0–100% (default 0%). The app combines a
+    per-window brightness cap with a black overlay: 0% is a black screen and
+    100% preserves the device's configured brightness. Intermediate values
+    smoothly dim the visible slideshow; playback continues normally.
 - **Start on Boot** — launch on device boot (default off). Requires the "Display over other apps" permission (Android 10+ BAL exemption); on Chinese OEMs, also shows an "Open Autostart Settings" button until a reboot confirms the receiver fired.
 - **Launcher Mode** — register as a Home launcher (default off; only visible when Start on Boot is enabled). The most reliable autostart method; the system always launches the Home app on boot, bypassing BOOT_COMPLETED and OEM autostart blocks entirely. Shows an "Open Launcher Settings" button to switch launchers or re-select this app; the same action is available in the slideshow hover UI.
 - **Auto-Update** — permanently disabled until a fork-owned signed release
@@ -288,11 +310,9 @@ Options:
   - **Server URL** — editable inline
   - **API Key** — editable inline. For security, tapping **Edit** empties
     the field (the key is never pre-populated); the user must re-type it.
-    When the key is set, two biometric-gated buttons appear:
-    **Reveal** (shows the key in monospace; tap again to hide) and
-    **Copy** (copies to clipboard, then auto-hides). Both require
-    fingerprint / face / device-PIN authentication. If no screen lock
-    is set up, a dialog prompts the user to create one.
+    When the key is set, **Reveal** (shows the key in monospace; tap again to
+    hide) and **Copy** actions require the Administration PIN when one is
+    configured.
   - Test Connection button
   - **API Key Permissions** card (shown when a key is set):
     - Lists all 4 required permissions with ✓ (granted), ✗ (denied),
@@ -303,16 +323,17 @@ Options:
       background and shows guidance to regenerate the key.
 - **Feature gating:** Skip Videos is locked ON by the fork profile regardless
   of permission status; `asset.download` is not requested.
-- **Albums** — change album selection (returns to album picker). Requires
-  biometric / device-credential authentication to open.
+- **Albums** — change album selection (returns to album picker). This requires
+  the Administration PIN when one is configured.
 - **Reset All Settings** — clears all settings, credentials, album selection,
   and cached data, returns to setup screen. Tour completion is **preserved**
   (use "Reset All Tours" to clear tour progress).
 
 ### F8: Media Selection
 
-Accessible from the slideshow top bar (grid icon, next to the photo count).
-Requires biometric / device-credential authentication to open.
+The media-selection grid remains an internal screen but is not exposed from
+the slideshow controls in this dedicated photo-frame profile. Individual-photo
+visibility is intentionally not a guest-facing operation.
 
 1. User taps the grid icon in the slideshow controls.
 2. Biometric prompt appears (fingerprint / face / device PIN). If the user

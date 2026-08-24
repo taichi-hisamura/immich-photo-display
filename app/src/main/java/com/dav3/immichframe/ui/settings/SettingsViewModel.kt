@@ -14,6 +14,7 @@ import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.repository.ImmichRepository
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import com.dav3.immichframe.domain.repository.SettingsRepository
+import com.dav3.immichframe.domain.system.DisplayScheduleManager
 import com.dav3.immichframe.domain.system.openLauncherSettings
 import com.dav3.immichframe.domain.system.setLauncherModeEnabled
 import com.dav3.immichframe.ui.onboarding.TourSteps
@@ -37,6 +38,7 @@ data class SettingsUiState(
     val permissionCheckInProgress: Boolean = false,
     val syncProgress: SyncProgress? = null,
     val syncRequested: Boolean = false,
+    val adminPinConfigured: Boolean = false,
 )
 
 @HiltViewModel
@@ -47,6 +49,7 @@ constructor(
     private val immichRepo: ImmichRepository,
     private val mediaCacheRepo: MediaCacheRepository,
     private val syncScheduler: SyncScheduler,
+    private val displayScheduleManager: DisplayScheduleManager,
 ) : ViewModel() {
     private val permissionCheckingFlow = MutableStateFlow(false)
     private val syncRequestedFlow = MutableStateFlow(false)
@@ -59,12 +62,27 @@ constructor(
             settingsRepo.permissionStatus,
             permissionCheckingFlow,
         ) { slideshow, url, key, perms, checking ->
-            SettingsUiState(slideshow, url, key, perms, checking)
+            SettingsUiState(
+                settings = slideshow,
+                serverUrl = url,
+                apiKey = key,
+                permissionStatus = perms,
+                permissionCheckInProgress = checking,
+            )
         }
 
     val uiState: StateFlow<SettingsUiState> =
-        combine(baseUiState, syncScheduler.syncProgress, syncRequestedFlow) { base, progress, requested ->
-            base.copy(syncProgress = progress, syncRequested = requested)
+        combine(
+            baseUiState,
+            settingsRepo.adminPinConfigured,
+            syncScheduler.syncProgress,
+            syncRequestedFlow,
+        ) { base, pinConfigured, progress, requested ->
+            base.copy(
+                syncProgress = progress,
+                syncRequested = requested,
+                adminPinConfigured = pinConfigured,
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
     val onboardingSteps: StateFlow<Set<String>> =
@@ -142,6 +160,14 @@ constructor(
                     syncScheduler.cancelPeriodicSync()
                 }
             }
+
+            if (
+                newSettings.screenScheduleEnabled != current.screenScheduleEnabled ||
+                newSettings.screenScheduleOffTime != current.screenScheduleOffTime ||
+                newSettings.screenScheduleOnTime != current.screenScheduleOnTime
+            ) {
+                displayScheduleManager.updateSchedule(newSettings)
+            }
         }
     }
 
@@ -197,27 +223,39 @@ constructor(
 
     fun toggleNightMode() = update { it.copy(nightMode = !it.nightMode) }
 
-    /**
-     * Move the night-mode start time, preserving the window duration. The end
-     * time shifts by the same delta so a 22:00→07:00 window moved to 23:00
-     * becomes 23:00→08:00. Prevents degenerate windows where start >= end.
-     */
+    /** The start and end times are intentionally independent. */
     fun updateNightModeStart(minutes: Int) = update {
-        val newStart = minutes.coerceIn(0, 1439)
-        val duration = (it.nightModeEnd - it.nightModeStart + 1440) % 1440
-        val newEnd = (newStart + duration) % 1440
-        it.copy(nightModeStart = newStart, nightModeEnd = newEnd)
+        it.copy(nightModeStart = minutes.coerceIn(0, 1439))
     }
 
-    /** Move the night-mode end time, preserving the window duration. */
+    /** The start and end times are intentionally independent. */
     fun updateNightModeEnd(minutes: Int) = update {
-        val newEnd = minutes.coerceIn(0, 1439)
-        val duration = (it.nightModeEnd - it.nightModeStart + 1440) % 1440
-        val newStart = (newEnd - duration + 1440) % 1440
-        it.copy(nightModeStart = newStart, nightModeEnd = newEnd)
+        it.copy(nightModeEnd = minutes.coerceIn(0, 1439))
     }
 
     fun updateNightModeBrightness(percent: Int) = update { it.copy(nightModeBrightness = percent.coerceIn(0, 100)) }
+
+    fun toggleScreenSchedule() = update {
+        val enabled = !it.screenScheduleEnabled
+        it.copy(
+            screenScheduleEnabled = enabled,
+            // A schedule needs the base display policy to keep the screen awake after waking.
+            keepScreenOn = if (enabled) true else it.keepScreenOn,
+        )
+    }
+
+    fun updateScreenScheduleOffTime(minutes: Int) = update {
+        it.copy(screenScheduleOffTime = minutes.coerceIn(0, 1439))
+    }
+
+    fun updateScreenScheduleOnTime(minutes: Int) = update {
+        it.copy(screenScheduleOnTime = minutes.coerceIn(0, 1439))
+    }
+
+    /** Replaces any inexact fallback alarms after exact-alarm access is granted. */
+    fun refreshDisplaySchedule() = viewModelScope.launch {
+        displayScheduleManager.rescheduleAfterBoot()
+    }
 
     fun toggleClockSnapToGrid() = update { it.copy(clockSnapToGrid = !it.clockSnapToGrid) }
 
@@ -244,6 +282,18 @@ constructor(
     fun updateApiKey(key: String) = viewModelScope.launch {
         settingsRepo.setApiKey(key.trim())
         immichRepo.invalidateCache()
+    }
+
+    fun setAdminPin(pin: String) = viewModelScope.launch {
+        settingsRepo.setAdminPin(pin)
+    }
+
+    fun clearAdminPin() = viewModelScope.launch {
+        settingsRepo.clearAdminPin()
+    }
+
+    fun verifyAdminPin(pin: String, onResult: (Boolean) -> Unit) = viewModelScope.launch {
+        onResult(settingsRepo.verifyAdminPin(pin))
     }
 
     fun resetAll() = viewModelScope.launch {

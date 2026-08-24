@@ -7,21 +7,28 @@ import android.provider.Settings
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.dav3.immichframe.data.local.appDataStore
+import com.dav3.immichframe.domain.system.DisplayScheduleManager
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private val START_ON_BOOT_KEY = stringPreferencesKey("start_on_boot")
 private val BOOT_VERIFIED_KEY = stringPreferencesKey("boot_verified")
 
+@AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
+    @Inject lateinit var displayScheduleManager: DisplayScheduleManager
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                displayScheduleManager.rescheduleAfterBoot()
                 val enabled = context.appDataStore.data
                     .first()[START_ON_BOOT_KEY]?.toBoolean() ?: false
 

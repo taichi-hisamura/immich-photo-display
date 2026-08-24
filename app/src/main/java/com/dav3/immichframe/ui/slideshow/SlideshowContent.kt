@@ -118,8 +118,6 @@ fun SlideshowContent(
             contentAlignment = Alignment.Center,
         ) {
             when {
-                nightActive -> { /* pure black surface, nothing to render */ }
-
                 state.isLoading -> CircularProgressIndicator()
 
                 state.error != null -> Text(state.error!!, color = Color.White)
@@ -156,6 +154,14 @@ fun SlideshowContent(
                         }
                     }
                 }
+            }
+
+            if (nightActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 1f - s.nightModeBrightness / 100f)),
+                )
             }
 
             // Draggable clock overlay

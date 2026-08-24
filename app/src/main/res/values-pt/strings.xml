@@ -54,7 +54,7 @@
     <string name="night_mode_start">Escurecer ecrã às</string>
     <string name="night_mode_end">Aclarar ecrã às</string>
     <string name="night_mode_brightness">Brilho noturno</string>
-    <string name="night_mode_brightness_hint">Nível de brilho do ecrã durante as horas noturnas. 0%% é o mais escuro, mas não completamente desligado.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Brilho do ecrã durante as horas noturnas. A 0% o ecrã fica preto; a 100% é usado o brilho do dispositivo.</string>
 
     <!-- Clock -->
     <string name="show_clock">Mostrar relógio</string>

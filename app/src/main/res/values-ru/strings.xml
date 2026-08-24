@@ -54,7 +54,7 @@
     <string name="night_mode_start">Затемнить экран в</string>
     <string name="night_mode_end">Осветить экран в</string>
     <string name="night_mode_brightness">Ночная яркость</string>
-    <string name="night_mode_brightness_hint">Уровень яркости экрана в ночные часы. 0%% — самый тёмный, но не полностью выключенный.</string>
+    <string name="night_mode_brightness_hint" formatted="false">Яркость экрана в ночные часы. При 0% экран чёрный, при 100% используется яркость устройства.</string>
 
     <!-- Clock -->
     <string name="show_clock">Показывать часы</string>
