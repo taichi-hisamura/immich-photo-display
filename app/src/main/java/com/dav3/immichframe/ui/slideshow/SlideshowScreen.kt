@@ -204,6 +204,22 @@ fun SlideshowScreen(
         }
     }
 
+    // Coil normally reports success or failure to KenBurnsImage. A malformed
+    // local preview or a request that never finishes used to leave imageReady
+    // false forever, freezing an unattended frame on one photo. Give a stalled
+    // request a generous 20 seconds, then move on.
+    LaunchedEffect(state.currentIndex, imageReady, isPaused, isScreenActive) {
+        if (imageReady || isPaused || !isScreenActive || state.assets.isEmpty()) {
+            return@LaunchedEffect
+        }
+        val assetId = state.assets[state.currentIndex].id
+        delay(20_000L)
+        if (!imageReady && !isPaused && isScreenActive) {
+            android.util.Log.w("Slideshow", "Image load timed out; skipping asset=$assetId")
+            viewModel.nextIfCurrent(assetId)
+        }
+    }
+
     var controlsVisible by remember { mutableStateOf(false) }
 
     // Keep controls visible only while a coachmark is actually on screen.
@@ -375,6 +391,10 @@ fun SlideshowScreen(
                                     enabledAnims = s.enabledAnimations,
                                     durationMs = s.intervalSeconds * 1000L,
                                     onImageLoaded = { imageReady = true },
+                                    onImageLoadFailed = {
+                                        android.util.Log.w("Slideshow", "Image load failed; skipping asset=$assetId")
+                                        viewModel.nextIfCurrent(assetId)
+                                    },
                                 )
                             }
                         }

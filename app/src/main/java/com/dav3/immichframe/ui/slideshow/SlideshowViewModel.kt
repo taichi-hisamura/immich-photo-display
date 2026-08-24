@@ -189,6 +189,16 @@ constructor(
         }
     }
 
+    /**
+     * Advances only when [assetId] is still visible. Image-loading callbacks
+     * can arrive after a crossfade, and must not skip a newer photo.
+     */
+    fun nextIfCurrent(assetId: String) {
+        if (_uiState.value.assets.getOrNull(_uiState.value.currentIndex)?.id == assetId) {
+            next()
+        }
+    }
+
     fun previous() {
         val s = _uiState.value
         if (s.assets.isNotEmpty()) {

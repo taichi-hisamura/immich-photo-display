@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Immich Frame Low Bandwidth</string>
-    <string name="app_name_dev">Immich Media Frame - Dev</string>
+    <string name="app_name">Immich Photo Display</string>
+    <string name="app_name_dev">Immich Photo Display - Dev</string>
 
     <!-- Sections -->
     <string name="section_playback">Playback</string>

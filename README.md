@@ -1,9 +1,14 @@
-# Immich Frame Low Bandwidth — metered Android fork
+# Immich Photo Display — Low Bandwidth
 
-> This is a low-bandwidth fork of ImmichFrame v0.5.0 for a dedicated,
+> A low-bandwidth family photo-display fork of
+> [dave-palt/immich-photo-frame](https://github.com/dave-palt/immich-photo-frame)
+> for a dedicated,
 > SIM-connected photo frame. It stores preview images only, excludes videos,
 > uses complete paginated album sync, and disables upstream self-update. See
 > [the fork profile](docs/low-bandwidth-profile.md) for normative behavior.
+
+> This project is independent of the separate
+> [immichFrame/ImmichFrame](https://github.com/immichFrame/ImmichFrame) project.
 
 A native Android slideshow app that connects directly to your Immich server.
 No intermediary Docker container, no WebView, no second API key.
@@ -36,6 +41,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Adaptive background (fills letterbox bars with each photo's edge colors as a gradient)
 - Shuffle mode for randomized image order
 - Progress bar showing time remaining per image
+- Failed or unresponsive image loads are skipped automatically so the frame
+  does not stop on one photo
 - Start on boot (with SYSTEM_ALERT_WINDOW permission for Android 10+ BAL exemption, plus OEM autostart permission detection)
 - Launcher mode (Home replacement) — the most reliable boot method for dedicated photo frames; bypasses BOOT_COMPLETED entirely
 - Fork self-update disabled until a fork-owned signed release channel exists

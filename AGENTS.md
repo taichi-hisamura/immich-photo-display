@@ -145,6 +145,11 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-08-24** — Product name. The user-facing app name is **Immich Photo
+  Display** in every locale. The public README describes it as a low-bandwidth
+  family photo-display fork of `dave-palt/immich-photo-frame` and explicitly
+  distinguishes it from the separate `immichFrame/ImmichFrame` project.
+
 - **2026-08-24** — Album-selection return path. The picker is shared by
   first-run setup and Settings. When opened from Settings, replace the
   duplicate settings gear with a visible **Back to Settings** action; it must

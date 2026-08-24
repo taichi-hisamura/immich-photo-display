@@ -20,7 +20,7 @@ Shown on first launch or when credentials are missing/invalid.
 │                              │
 │         [App Logo]           │ ← app logo vector (120dp)
 │                              │
-│   ImmichFrame                │
+│   Immich Photo Display        │
 │   Connect to your server     │
 │                              │
 │   [https:// ▼] [domain.....] │ ← protocol dropdown + URL field
@@ -349,7 +349,7 @@ appears:
   when launcher mode is active.
 - If the app loses its default-launcher status while Launcher Mode is
   enabled, a dialog appears on resume prompting the user to re-select
-  Immich Media Frame as the default Home.
+  Immich Photo Display as the default Home.
 - Auto-Update, when visible, shows a "Check Now" button below it that
   triggers an immediate update check regardless of the toggle state. While
   active, the button label reflects state: "Checking for updates…",

@@ -106,6 +106,9 @@ action that saves the selected albums.
     set of individually-enabled animation types. Available types: Zoom In,
     Zoom Out, Pan Left, Pan Right, Pan Up, Pan Down, Random. Random picks
     from the other enabled types and requires at least one other type enabled.
+14. If an image fails to decode or does not complete loading within 20 seconds,
+    the app logs the asset ID and automatically skips to the next photo. A
+    late callback from an older transition cannot skip the newly visible photo.
 
 **Offline / album lifecycle:**
 - **Server unreachable**: the slideshow continues displaying cached media
@@ -194,7 +197,7 @@ launchers without navigating to settings.
 
 If the app loses its default-launcher status while Launcher Mode is enabled
 (e.g., the user selected another launcher), a dialog appears on resume
-prompting the user to re-select Immich Media Frame as the default Home.
+prompting the user to re-select Immich Photo Display as the default Home.
 Toggling Launcher Mode off disables the alias and reverts to normal
 behaviour.
 
@@ -367,7 +370,7 @@ visibility is intentionally not a guest-facing operation.
 | Selected album deleted on server (404) | Purge that album's cache. If all selected albums gone: clear selection, navigate to album selection. |
 | Server reachable but zero albums | Show "No albums available" message with retry button |
 | Album has no images | Skip album, show toast notification |
-| Image fails to load | Skip to next image, log error |
+| Image fails to load or does not complete loading within 20 seconds | Skip to next image, log error |
 | Update download fails | Show "Update check failed" on Check Now button, allow retry |
 | Network timeout | Retry up to 3 times with backoff, then skip |
 | Transient empty metadata response | Preserve existing cache (do not prune); retry on next sync |

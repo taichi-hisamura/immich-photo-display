@@ -33,6 +33,7 @@ internal fun KenBurnsImage(
     enabledAnims: List<PhotoAnimation>,
     durationMs: Long,
     onImageLoaded: () -> Unit = {},
+    onImageLoadFailed: () -> Unit = {},
 ) {
     // Deterministic pick from enabled set
     val anim = remember(assetId, enabledAnims) {
@@ -49,8 +50,10 @@ internal fun KenBurnsImage(
             contentDescription = null,
             contentScale = contentScale,
             onState = { state ->
-                if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
-                    onImageLoaded()
+                when (state) {
+                    is AsyncImagePainter.State.Success -> onImageLoaded()
+                    is AsyncImagePainter.State.Error -> onImageLoadFailed()
+                    else -> Unit
                 }
             },
             modifier = Modifier.fillMaxSize(),
@@ -110,8 +113,10 @@ internal fun KenBurnsImage(
         contentDescription = null,
         contentScale = contentScale,
         onState = { state ->
-            if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
-                onImageLoaded()
+            when (state) {
+                is AsyncImagePainter.State.Success -> onImageLoaded()
+                is AsyncImagePainter.State.Error -> onImageLoadFailed()
+                else -> Unit
             }
         },
         modifier = Modifier
