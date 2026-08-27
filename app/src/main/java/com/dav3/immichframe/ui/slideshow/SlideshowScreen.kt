@@ -465,7 +465,16 @@ fun SlideshowScreen(
                             .padding(vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.photos_count, state.currentIndex + 1, state.assets.size), color = Color.White)
+                        if (state.isShowingFallback || state.assets.isNotEmpty()) {
+                            Text(
+                                text = if (state.isShowingFallback) {
+                                    stringResource(R.string.photos_empty_fallback)
+                                } else {
+                                    stringResource(R.string.photos_count, state.currentIndex + 1, state.assets.size)
+                                },
+                                color = Color.White,
+                            )
+                        }
                         Spacer(Modifier.weight(1f))
                         // Update status icon — shows checking/downloading/ready states.
                         // Clicking opens the install dialog (only when download is ready).

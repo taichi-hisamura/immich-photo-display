@@ -213,6 +213,9 @@ loading.
    to Coil, so the image slideshow is fully **offline-capable**. If `autoSync`
    is on, foreground sync is enqueued only when the previous successful sync
    is older than the configured interval.
+   While it remains open, the slideshow observes Room cache changes. A
+   completed worker sync therefore updates the active photo list and count
+   without requiring navigation away from the slideshow.
 2. **Periodic sync**: `SyncScheduler` enqueues a periodic
    `MediaCacheWorker` (fork minimum 60 min; default 360 min)
    that fetches album asset lists, downloads new/updated assets, and
@@ -223,8 +226,10 @@ loading.
      treated as permanently deleted — its cache is purged and it's flagged
      as gone. Transient errors (network, 5xx) are skipped; cache preserved.
    - **Empty-response guard**: the reconcile step only prunes cached assets
-     when the remote list is non-empty. An empty response (possible
-     search-service transient issue) does not wipe the cache.
+     when the remote list is non-empty, or when the response is empty and the
+     independent `GET /albums` metadata reports `assetCount = 0` for that
+     album. An unconfirmed empty response (possible search-service transient
+     issue) does not wipe the cache.
    - Deletes cached assets no longer in the remote album (only when remote
      list is non-empty)
    - Filters out videos and downloads one bounded preview for each new/updated image
@@ -235,6 +240,14 @@ loading.
    - If **all** selected albums were deleted (404), clears
      `selected_album_ids` in DataStore so `NavViewModel` routes the user
      back to album selection on next foreground.
+
+When sync removes the current image's final album membership, the slideshow
+holds a transient in-memory display lease for that file. It applies the cache
+snapshot at the next normal transition, then releases the lease and removes the
+orphaned preview. If all selected albums are confirmed empty, the current asset
+is stored as `fallback_asset_id` in DataStore and remains on-screen until new
+cached media is available. The Media Cache section and slideshow controls then
+show `0 photos · displaying the last photo`.
 
 Cache files are stored in `getExternalFilesDir("media_cache")`.
 
@@ -280,6 +293,7 @@ Setup → Albums → Slideshow
 | API Key | EncryptedSharedPreferences | `api_key` | String (encrypted) |
 | Administration PIN verifier | EncryptedSharedPreferences | `admin_pin_salt`, `admin_pin_hash` | Salted PBKDF2-HMAC-SHA256 verifier (encrypted; PIN is not stored) |
 | Selected Album IDs | DataStore | `selected_album_ids` | String set |
+| Empty-album fallback photo | DataStore | `fallback_asset_id` | String asset ID; set only while all selected albums are confirmed empty |
 | Slideshow interval | DataStore | `interval_sec` | Int (5–120) |
 | Transition duration | DataStore | `transition_sec` | Float (0–3) |
 | Image fill mode | DataStore | `fill_mode` | String enum (CONTAIN/COVER) |

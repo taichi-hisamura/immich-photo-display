@@ -73,6 +73,17 @@ class MediaCacheWorker @AssistedInject constructor(
     }
 
     private suspend fun performFullSync(albumIds: List<String>) {
+        // A fallback photo may be the only image still painted while an empty
+        // album is reconciled. Restore this persisted lease before deletions,
+        // including after an app process restart.
+        settingsRepository.fallbackAssetId.first()?.let(mediaCacheRepository::retainAssetForDisplay)
+        val confirmedEmptyAlbumIds = immichRepository.getAlbums()
+            .getOrNull()
+            ?.filter { it.assetCount == 0 }
+            ?.map { it.id }
+            ?.toSet()
+            .orEmpty()
+
         mediaCacheRepository.updateSyncProgress(
             SyncProgress(
                 albumIds = albumIds,
@@ -95,7 +106,12 @@ class MediaCacheWorker @AssistedInject constructor(
 
             immichRepository.getAlbumAssets(albumId).fold(
                 onSuccess = { remoteAssets ->
-                    downloadAndReconcile(albumId, albumIds, remoteAssets)
+                    downloadAndReconcile(
+                        albumId = albumId,
+                        albumIds = albumIds,
+                        remoteAssets = remoteAssets,
+                        emptyAlbumConfirmed = albumId in confirmedEmptyAlbumIds,
+                    )
                 },
                 onFailure = { error ->
                     if (isAlbumGone(error)) {
@@ -129,6 +145,7 @@ class MediaCacheWorker @AssistedInject constructor(
         albumId: String,
         albumIds: List<String>,
         remoteAssets: List<Asset>,
+        emptyAlbumConfirmed: Boolean,
     ) {
         val remoteImages = selectSyncableImages(remoteAssets)
         mediaCacheRepository.updateSyncProgress(
@@ -165,10 +182,11 @@ class MediaCacheWorker @AssistedInject constructor(
         }
         val remoteIds = remoteImages.map(Asset::id).toSet()
 
-        // Preserve the existing conservative empty-response behavior. A
-        // successful non-empty response (including an album containing only
-        // videos) is authoritative and may remove stale image memberships.
-        if (remoteAssets.isNotEmpty()) {
+        // A search response is authoritative when it has entries. A zero-item
+        // response is authoritative only when Immich's separate album
+        // metadata also says the album contains zero assets. This prevents a
+        // transient search failure from erasing the local frame cache.
+        if (remoteAssets.isNotEmpty() || emptyAlbumConfirmed) {
             val removedIds = validCachedImages.filter { it.id !in remoteIds }.map(CachedAsset::id)
             mediaCacheRepository.removeAlbumAssets(albumId, removedIds)
         }

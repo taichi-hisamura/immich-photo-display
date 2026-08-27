@@ -85,7 +85,14 @@ action that saves the selected albums.
    On a cold start (empty cache), the app fetches asset metadata from the
    server via `POST /search/metadata`. If **Auto Sync** is enabled, a
    background WorkManager job downloads new/updated assets and reconciles
-   deletions for the next launch.
+   deletions. The running slideshow observes the local cache, so a completed
+   sync updates its photo count and adds/removes media without requiring a
+   screen transition or app restart.
+   While that cache snapshot is loading, the controls omit the count rather
+   than briefly showing a zero-photo placeholder.
+   If the image currently on screen was deleted, it remains visible until the
+   normal next-photo transition; its local preview is deleted immediately
+   after that transition. Non-visible deleted images are removed at sync time.
 2. If multiple albums selected, asset lists are merged.
 3. If **Shuffle** is enabled (default on), the merged list is randomized.
 4. **Skip Videos** is permanently enabled. Video assets are never downloaded
@@ -121,9 +128,13 @@ action that saves the selected albums.
   selection so the user can pick again. If only some albums are gone, the
   remaining albums keep displaying.
 - **Transient empty metadata response**: the reconcile step guards against
-  wiping the cache when the server returns an empty asset list (which could
-  indicate a transient search-service issue). Cache is only pruned when the
-  remote list is non-empty.
+   wiping the cache when the server returns an empty asset list (which could
+   indicate a transient search-service issue). Cache is only pruned when the
+   remote list is non-empty, or when Immich's album metadata independently
+   confirms that the selected album contains zero assets. If all selected
+   albums are confirmed empty, the active photo remains as a fallback and the
+   controls show **"0 photos · displaying the last photo"** until new media
+   is synchronized.
 
 ### F4: In-Slideshow Controls
 

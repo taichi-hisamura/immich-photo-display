@@ -10,6 +10,7 @@ import com.dav3.immichframe.domain.repository.ImmichRepository
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,8 @@ data class SlideshowUiState(
     val currentIndex: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null,
+    /** True when albums are confirmed empty and one final photo is retained. */
+    val isShowingFallback: Boolean = false,
     /**
      * Set when the selected album(s) no longer exist on the server. The UI
      * should navigate back to album selection so the user can pick again.
@@ -56,6 +59,12 @@ constructor(
      * (used by adaptive background color extraction) without a DB lookup.
      */
     private val localThumbnailPaths = mutableMapOf<String, String>()
+
+    private var cacheObservationJob: Job? = null
+
+    /** Latest cache snapshot that excludes the currently painted photo. */
+    private var pendingCachedAssets: List<Asset>? = null
+    private var retainedDisplayAssetId: String? = null
 
     val settings =
         settingsRepo.slideshowSettings
@@ -103,17 +112,26 @@ constructor(
             }
             val uniqueCachedAssets = cachedAssets.distinctBy(Asset::id)
 
+            val fallbackAsset = settingsRepo.fallbackAssetId.first()
+                ?.let { assetId -> cacheRepo.getCachedAsset(assetId)?.toAsset() }
+            if (fallbackAsset != null) {
+                cacheRepo.retainAssetForDisplay(fallbackAsset.id)
+                retainedDisplayAssetId = fallbackAsset.id
+                resolveLocalPaths(uniqueCachedAssets + fallbackAsset)
+                _uiState.value = SlideshowUiState(
+                    assets = listOf(fallbackAsset),
+                    isLoading = false,
+                    isShowingFallback = true,
+                )
+                observeCachedAssets(albumIds, toggledIds, newItemsShown)
+                if (s.autoSync) syncScheduler.syncIfStale(albumIds)
+                return@launch
+            }
+
             if (uniqueCachedAssets.isNotEmpty()) {
                 // Resolve local file paths up front so imageUrl/videoUrl can
                 // serve offline `file://` URIs without per-frame DB lookups.
-                localFilePaths.clear()
-                localFilePaths.putAll(
-                    cacheRepo.getAssetFilePaths(uniqueCachedAssets.map { it.id }),
-                )
-                localThumbnailPaths.clear()
-                localThumbnailPaths.putAll(
-                    cacheRepo.getAssetThumbnailPaths(uniqueCachedAssets.map { it.id }),
-                )
+                resolveLocalPaths(uniqueCachedAssets)
 
                 // Show cached assets immediately
                 val videoCount = uniqueCachedAssets.count { it.type == AssetType.VIDEO }
@@ -127,11 +145,13 @@ constructor(
                 } else {
                     SlideshowUiState(isLoading = false, error = "No images found in cache")
                 }
+                updateDisplayLease(ordered.firstOrNull()?.id)
 
                 // Kick off background sync via WorkManager (worker handles download + reconcile)
                 if (s.autoSync) {
                     syncScheduler.syncIfStale(albumIds)
                 }
+                observeCachedAssets(albumIds, toggledIds, newItemsShown)
             } else {
                 // Cold start: no cache yet — fetch metadata from network for immediate display
                 val allAssets = mutableListOf<Asset>()
@@ -173,19 +193,96 @@ constructor(
                         SlideshowUiState(isLoading = false, error = "No images found")
                     }
                 }
+                updateDisplayLease(ordered.firstOrNull()?.id)
 
                 // Populate cache in background (worker downloads files + writes DB)
                 if (ordered.isNotEmpty()) {
+                    observeCachedAssets(albumIds, toggledIds, newItemsShown)
                     syncScheduler.syncNow(albumIds)
                 }
             }
         }
     }
 
+    /**
+     * Keeps the running slideshow aligned with Room while a background cache
+     * sync adds, updates, or removes media. Previously the cache was read only
+     * at screen entry, so the count stayed stale until the user navigated away
+     * and back even after a successful sync.
+     */
+    private fun observeCachedAssets(
+        albumIds: List<String>,
+        toggledIds: Set<String>,
+        newItemsShown: Boolean,
+    ) {
+        cacheObservationJob?.cancel()
+        cacheObservationJob = viewModelScope.launch {
+            var receivedInitialSnapshot = false
+            cacheRepo.observeCachedAssets(albumIds).collect { cachedRows ->
+                val cachedAssets = cachedRows.map { it.toAsset() }
+                // Room can emit an initial empty snapshot while its per-album
+                // queries are starting. The slideshow already loaded its
+                // cache synchronously above, so that placeholder must not be
+                // mistaken for a server-confirmed removal.
+                if (!receivedInitialSnapshot && cachedAssets.isEmpty()) {
+                    receivedInitialSnapshot = true
+                    return@collect
+                }
+                receivedInitialSnapshot = true
+                val filteredAssets = applyMediaSelection(cachedAssets, toggledIds, newItemsShown)
+                    .let { assets ->
+                        if (settings.value.skipVideos) assets.filter { it.type == AssetType.IMAGE } else assets
+                    }
+                val oldState = _uiState.value
+                val currentAsset = oldState.assets.getOrNull(oldState.currentIndex)
+                val currentWasRemoved = currentAsset != null && filteredAssets.none { it.id == currentAsset.id }
+
+                if (oldState.isShowingFallback || currentWasRemoved) {
+                    pendingCachedAssets = filteredAssets
+                    if (filteredAssets.isEmpty() && currentAsset != null) {
+                        settingsRepo.setFallbackAssetId(currentAsset.id)
+                        _uiState.value = oldState.copy(isLoading = false, error = null, isShowingFallback = true)
+                    }
+                    return@collect
+                }
+
+                resolveLocalPaths(filteredAssets)
+                val byId = filteredAssets.associateBy(Asset::id)
+                val existingIds = oldState.assets.map(Asset::id).toSet()
+                val preserved = oldState.assets.mapNotNull { byId[it.id] }
+                val additions = filteredAssets.filter { it.id !in existingIds }
+                    .let { assets -> if (settings.value.shuffle) assets.shuffled() else assets }
+                val updatedAssets = preserved + additions
+                val currentId = oldState.assets.getOrNull(oldState.currentIndex)?.id
+                val updatedIndex = updatedAssets.indexOfFirst { it.id == currentId }
+                    .takeIf { it >= 0 }
+                    ?: oldState.currentIndex.coerceIn(0, (updatedAssets.size - 1).coerceAtLeast(0))
+
+                _uiState.value = oldState.copy(
+                    assets = updatedAssets,
+                    currentIndex = updatedIndex,
+                    isLoading = false,
+                    error = if (updatedAssets.isEmpty()) "No images found in cache" else null,
+                )
+            }
+        }
+    }
+
     fun next() {
         val s = _uiState.value
+        pendingCachedAssets?.let { pending ->
+            if (pending.isNotEmpty()) {
+                pendingCachedAssets = null
+                settingsRepoClearFallback()
+                showNextCacheSnapshot(pending)
+            }
+            return
+        }
+        if (s.isShowingFallback) return
         if (s.assets.isNotEmpty()) {
-            _uiState.value = s.copy(currentIndex = (s.currentIndex + 1) % s.assets.size)
+            val nextIndex = (s.currentIndex + 1) % s.assets.size
+            _uiState.value = s.copy(currentIndex = nextIndex)
+            updateDisplayLease(s.assets[nextIndex].id)
         }
     }
 
@@ -201,8 +298,41 @@ constructor(
 
     fun previous() {
         val s = _uiState.value
-        if (s.assets.isNotEmpty()) {
-            _uiState.value = s.copy(currentIndex = (s.currentIndex - 1 + s.assets.size) % s.assets.size)
+        if (!s.isShowingFallback && s.assets.isNotEmpty()) {
+            val previousIndex = (s.currentIndex - 1 + s.assets.size) % s.assets.size
+            _uiState.value = s.copy(currentIndex = previousIndex)
+            updateDisplayLease(s.assets[previousIndex].id)
+        }
+    }
+
+    private suspend fun resolveLocalPaths(assets: List<Asset>) {
+        localFilePaths.clear()
+        localFilePaths.putAll(cacheRepo.getAssetFilePaths(assets.map(Asset::id)))
+        localThumbnailPaths.clear()
+        localThumbnailPaths.putAll(cacheRepo.getAssetThumbnailPaths(assets.map(Asset::id)))
+    }
+
+    private fun showNextCacheSnapshot(cachedAssets: List<Asset>) {
+        val ordered = if (settings.value.shuffle) cachedAssets.shuffled() else cachedAssets
+        val nextAsset = ordered.firstOrNull() ?: return
+        viewModelScope.launch {
+            resolveLocalPaths(ordered)
+            _uiState.value = SlideshowUiState(assets = ordered, currentIndex = 0, isLoading = false)
+            updateDisplayLease(nextAsset.id)
+        }
+    }
+
+    private fun settingsRepoClearFallback() {
+        viewModelScope.launch { settingsRepo.setFallbackAssetId(null) }
+    }
+
+    private fun updateDisplayLease(nextAssetId: String?) {
+        val previousAssetId = retainedDisplayAssetId
+        if (previousAssetId == nextAssetId) return
+        nextAssetId?.let(cacheRepo::retainAssetForDisplay)
+        retainedDisplayAssetId = nextAssetId
+        previousAssetId?.let { assetId ->
+            viewModelScope.launch { cacheRepo.releaseRetainedAsset(assetId) }
         }
     }
 

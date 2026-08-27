@@ -39,6 +39,7 @@ data class SettingsUiState(
     val syncProgress: SyncProgress? = null,
     val syncRequested: Boolean = false,
     val adminPinConfigured: Boolean = false,
+    val fallbackAssetId: String? = null,
 )
 
 @HiltViewModel
@@ -77,11 +78,13 @@ constructor(
             settingsRepo.adminPinConfigured,
             syncScheduler.syncProgress,
             syncRequestedFlow,
-        ) { base, pinConfigured, progress, requested ->
+            settingsRepo.fallbackAssetId,
+        ) { base, pinConfigured, progress, requested, fallbackAssetId ->
             base.copy(
                 syncProgress = progress,
                 syncRequested = requested,
                 adminPinConfigured = pinConfigured,
+                fallbackAssetId = fallbackAssetId,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 

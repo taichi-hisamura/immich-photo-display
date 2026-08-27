@@ -54,6 +54,10 @@ The in-app key generator creates a key with exactly these permissions
 (requires Immich v1.135+ for scoped keys). The external `keymgr` scripts
 are still available as a fallback.
 
+During media synchronization, `GET /api/albums` is also used to confirm an
+otherwise empty `POST /search/metadata` response. Cache removal for an empty
+album is allowed only when the matching album reports `assetCount = 0`.
+
 ### Permission Verification
 
 After the API key is stored (whether generated in-app or pasted manually),

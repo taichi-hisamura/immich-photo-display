@@ -8,9 +8,14 @@ import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -28,12 +33,31 @@ class MediaCacheRepositoryImpl @Inject constructor(
     private val _syncProgress = MutableStateFlow<SyncProgress?>(null)
     override val syncProgress: StateFlow<SyncProgress?> = _syncProgress.asStateFlow()
 
+    /** Asset IDs currently painted by the slideshow and therefore not yet deletable. */
+    private val retainedAssetIds = MutableStateFlow<Set<String>>(emptySet())
+
     override suspend fun getCachedAssets(albumId: String): Result<List<CachedAsset>> = withContext(Dispatchers.IO) {
         try {
             val assets = db.cachedAssetDao().getByAlbumId(albumId)
             Result.success(assets.map { CachedAssetEntity.toDomain(it.asset, it.albumId) })
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override fun observeCachedAssets(albumIds: List<String>): Flow<List<CachedAsset>> {
+        if (albumIds.isEmpty()) return flowOf(emptyList())
+
+        return combine(
+            albumIds.distinct().map { albumId ->
+                db.cachedAssetDao().getByAlbumIdFlow(albumId)
+            },
+        ) { assetsByAlbum ->
+            assetsByAlbum
+                .flatMap { cachedAssets ->
+                    cachedAssets.map { CachedAssetEntity.toDomain(it.asset, it.albumId) }
+                }
+                .distinctBy(CachedAsset::id)
         }
     }
 
@@ -80,7 +104,7 @@ class MediaCacheRepositoryImpl @Inject constructor(
         if (assetIds.isEmpty()) return@withContext
         val orphans = db.withTransaction {
             db.cachedAssetDao().deleteMemberships(albumId, assetIds)
-            detachOrphanedAssets()
+            detachUnretainedOrphanedAssets()
         }
         deleteOrphanedFiles(orphans)
     }
@@ -88,7 +112,7 @@ class MediaCacheRepositoryImpl @Inject constructor(
     override suspend fun clearAlbum(albumId: String) = withContext(Dispatchers.IO) {
         val orphans = db.withTransaction {
             db.cachedAssetDao().deleteMembershipsByAlbum(albumId)
-            detachOrphanedAssets()
+            detachUnretainedOrphanedAssets()
         }
         deleteOrphanedFiles(orphans)
     }
@@ -102,6 +126,19 @@ class MediaCacheRepositoryImpl @Inject constructor(
         assets.forEach { entity ->
             deleteFile(entity.filePath)
             deleteFile(entity.thumbnailPath)
+        }
+        retainedAssetIds.value = emptySet()
+    }
+
+    override fun retainAssetForDisplay(assetId: String) {
+        retainedAssetIds.update { it + assetId }
+    }
+
+    override suspend fun releaseRetainedAsset(assetId: String) {
+        retainedAssetIds.update { it - assetId }
+        withContext(Dispatchers.IO) {
+            val removable = db.withTransaction { detachUnretainedOrphanedAssets() }
+            deleteOrphanedFiles(removable)
         }
     }
 
@@ -187,12 +224,13 @@ class MediaCacheRepositoryImpl @Inject constructor(
         path?.let { File(it).delete() }
     }
 
-    private suspend fun detachOrphanedAssets(): List<CachedAssetEntity> {
+    private suspend fun detachUnretainedOrphanedAssets(): List<CachedAssetEntity> {
         val orphans = db.cachedAssetDao().getOrphanedAssets()
-        if (orphans.isNotEmpty()) {
-            db.cachedAssetDao().deleteByIds(orphans.map(CachedAssetEntity::id))
+        val removable = orphans.filter { it.id !in retainedAssetIds.value }
+        if (removable.isNotEmpty()) {
+            db.cachedAssetDao().deleteByIds(removable.map(CachedAssetEntity::id))
         }
-        return orphans
+        return removable
     }
 
     private fun deleteOrphanedFiles(orphans: List<CachedAssetEntity>) {

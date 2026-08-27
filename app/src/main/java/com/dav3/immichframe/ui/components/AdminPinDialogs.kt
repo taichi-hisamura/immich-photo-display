@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.dav3.immichframe.R
 
@@ -106,7 +106,11 @@ fun AdminPinSetupDialog(
                     label = { Text(stringResource(R.string.admin_pin_confirm)) },
                     singleLine = true,
                     isError = mismatch,
-                    supportingText = if (mismatch) { { Text(stringResource(R.string.admin_pin_mismatch)) } } else null,
+                    supportingText = if (mismatch) {
+                        { Text(stringResource(R.string.admin_pin_mismatch)) }
+                    } else {
+                        null
+                    },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     modifier = Modifier.fillMaxWidth(),

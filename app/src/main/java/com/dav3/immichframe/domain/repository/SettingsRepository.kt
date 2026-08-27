@@ -11,6 +11,12 @@ interface SettingsRepository {
     val slideshowSettings: Flow<SlideshowSettings>
     val onboardingCompletedSteps: Flow<Set<String>>
 
+    /**
+     * The final locally retained image when every selected album is confirmed
+     * empty. It prevents the frame from becoming blank while awaiting photos.
+     */
+    val fallbackAssetId: Flow<String?>
+
     /** Whether a six-digit in-app PIN protects the administration screens. */
     val adminPinConfigured: Flow<Boolean>
 
@@ -48,6 +54,8 @@ interface SettingsRepository {
     suspend fun setSelectedAlbumIds(ids: List<String>)
 
     suspend fun setSlideshowSettings(settings: SlideshowSettings)
+
+    suspend fun setFallbackAssetId(assetId: String?)
 
     /** Update only the transient state controlled by the display schedule receiver. */
     suspend fun setScreenScheduleSleeping(sleeping: Boolean)

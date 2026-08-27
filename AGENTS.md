@@ -145,6 +145,19 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-08-27** — Slideshow count loading. Returning from Settings must not
+  flash a zero-photo count while Room cache observation is establishing its
+  first usable snapshot. Omit the count until assets are available; do not
+  treat the observer's initial empty emission as a deletion.
+
+- **2026-08-27** — Deletion and empty-album continuity. A photo currently
+  displayed by the slideshow must remain until the normal next-photo
+  transition, then its unreferenced preview may be deleted. A zero-result
+  metadata search must not erase cache unless Immich album metadata also
+  confirms `assetCount = 0`. When every selected album is confirmed empty,
+  retain the current photo as a fallback and show `0 photos · displaying the
+  last photo` in both the slideshow controls and Media Cache section.
+
 - **2026-08-24** — Settings tour startup. Do not draw a Settings coachmark
   while its persisted completion state is still loading. A completed tour must
   not flash briefly when the Settings screen opens; it remains replayable from

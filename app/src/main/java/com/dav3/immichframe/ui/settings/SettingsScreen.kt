@@ -79,9 +79,9 @@ import com.dav3.immichframe.domain.model.PermissionStatus
 import com.dav3.immichframe.domain.model.PhotoAnimation
 import com.dav3.immichframe.domain.model.RequiredPermission
 import com.dav3.immichframe.domain.model.SyncProgress
+import com.dav3.immichframe.domain.system.canScheduleExactDisplayAlarms
 import com.dav3.immichframe.domain.system.hasOverlayPermission
 import com.dav3.immichframe.domain.system.needsBootPermission
-import com.dav3.immichframe.domain.system.canScheduleExactDisplayAlarms
 import com.dav3.immichframe.domain.system.openBootPermissionSettings
 import com.dav3.immichframe.domain.system.openExactAlarmSettings
 import com.dav3.immichframe.domain.system.openLauncherSettings
@@ -722,6 +722,13 @@ fun SettingsScreen(
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
+                    )
+                }
+                if (state.fallbackAssetId != null) {
+                    Text(
+                        text = stringResource(R.string.photos_empty_fallback),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 TextButton(

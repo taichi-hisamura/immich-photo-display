@@ -224,6 +224,7 @@
 
     <!-- Slideshow -->
     <string name="photos_count">%1$d / %2$d media</string>
+    <string name="photos_empty_fallback">0 photos · displaying the last photo</string>
 
     <!-- Media Selection -->
     <string name="media_selection_title">Media Selection</string>

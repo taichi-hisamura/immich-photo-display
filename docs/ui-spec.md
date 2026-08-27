@@ -292,6 +292,10 @@ and display settings remain available without a PIN.
   requiring Android device lock.
 - **Albums section**: "Change Albums" returns to the album picker after PIN
   confirmation when an Administration PIN is configured.
+- **Media Cache section**: while every selected album is confirmed empty but
+  the frame retains the active photo to avoid a blank display, show
+  **"0 photos · displaying the last photo"** beneath the sync status. The
+  slideshow top controls show the same text instead of an index/count.
 - Changes saved immediately to DataStore (no save button needed).
 - "Test Connection" works same as setup screen.
 - **API Key Permissions card** (below Connection): shows ✓/✗/? for each of the 4

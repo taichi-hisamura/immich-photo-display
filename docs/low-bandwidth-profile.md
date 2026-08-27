@@ -59,6 +59,11 @@ Room schema version 3 separates physical assets from album membership:
 - `album_asset_cross_refs`: composite key `(album_id, asset_id)`
 - `album_sync_states`: the last successful sync and asset count per album
 
+An empty metadata search never by itself permits cache removal. The worker must
+also see `assetCount = 0` for the same album in Immich album metadata. When all
+selected albums are confirmed empty, the current on-screen preview is retained
+as a local fallback until new media is synchronized.
+
 Migration 2→3 preserves existing cached asset rows and their album
 memberships. Legacy cached videos are detached and removed when no album uses
 them.

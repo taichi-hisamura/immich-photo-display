@@ -121,9 +121,8 @@ internal fun nextOccurrenceMillis(minutesSinceMidnight: Int, now: ZonedDateTime)
 }
 
 /** True on pre-Android 12 devices, or after the user grants the special access. */
-fun canScheduleExactDisplayAlarms(context: Context): Boolean =
-    Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-        context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
+fun canScheduleExactDisplayAlarms(context: Context): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+    context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
 
 /** Opens Android's own per-app "Alarms & reminders" access screen. */
 fun openExactAlarmSettings(context: Context) {

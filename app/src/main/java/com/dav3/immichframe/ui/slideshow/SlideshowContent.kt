@@ -215,10 +215,16 @@ fun SlideshowContent(
                         .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        stringResource(R.string.photos_count, state.currentIndex + 1, state.assets.size),
-                        color = Color.White,
-                    )
+                    if (state.isShowingFallback || state.assets.isNotEmpty()) {
+                        Text(
+                            if (state.isShowingFallback) {
+                                stringResource(R.string.photos_empty_fallback)
+                            } else {
+                                stringResource(R.string.photos_count, state.currentIndex + 1, state.assets.size)
+                            },
+                            color = Color.White,
+                        )
+                    }
                     IconButton(
                         onClick = onMediaSelection,
                         modifier = tourState?.let { Modifier.tourTarget("slideshow_media_selection", it) }
