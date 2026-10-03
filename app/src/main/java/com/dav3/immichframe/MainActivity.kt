@@ -12,6 +12,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +37,20 @@ private const val RESUME_REHIDE_DELAY_MILLIS = 300L
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+    /**
+     * A launcher can deliver a new HOME intent to the existing activity while
+     * its Compose destination remains unchanged. Propagate that event so the
+     * slideshow restarts its playback effects even when no lifecycle state
+     * transition is observed by the destination.
+     */
+    private var launchGeneration by mutableIntStateOf(0)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        launchGeneration++
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -122,7 +137,10 @@ class MainActivity : FragmentActivity() {
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                 }
 
-                ImmichNavHost(suppressInitialOnboarding = suppressInitialOnboarding)
+                ImmichNavHost(
+                    suppressInitialOnboarding = suppressInitialOnboarding,
+                    launchGeneration = launchGeneration,
+                )
 
                 // Update check on startup (non-blocking, background download)
                 androidx.compose.runtime.LaunchedEffect(Unit) {
