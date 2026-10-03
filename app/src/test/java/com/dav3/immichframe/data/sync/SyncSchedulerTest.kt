@@ -1,11 +1,19 @@
 package com.dav3.immichframe.data.sync
 
+import androidx.work.ExistingWorkPolicy
 import com.dav3.immichframe.domain.model.AlbumSyncState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SyncSchedulerTest {
+    @Test
+    fun `manual retry replaces failed or retrying work`() {
+        assertEquals(ExistingWorkPolicy.REPLACE, immediateSyncPolicy(replaceRunning = true))
+        assertEquals(ExistingWorkPolicy.KEEP, immediateSyncPolicy(replaceRunning = false))
+    }
+
     @Test
     fun `recent successful sync suppresses foreground scan`() {
         val now = 10 * HOUR

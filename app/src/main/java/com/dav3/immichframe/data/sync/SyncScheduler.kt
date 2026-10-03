@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.dav3.immichframe.domain.model.AlbumSyncState
+import com.dav3.immichframe.domain.model.SyncProgress
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -79,8 +80,25 @@ class SyncScheduler @Inject constructor(
     /**
      * Trigger an immediate one-time sync.
      */
-    fun syncNow(albumIds: List<String>): Boolean {
+    suspend fun syncNow(
+        albumIds: List<String>,
+        replaceRunning: Boolean = false,
+    ): Boolean {
         if (albumIds.isEmpty()) return false
+
+        if (replaceRunning) {
+            // A manual retry is an explicit request to discard a failed or
+            // retrying unique work item. Reset the visible state immediately
+            // so Settings does not keep showing the previous ERROR while the
+            // replacement waits for WorkManager to start it.
+            mediaCacheRepository.updateSyncProgress(
+                SyncProgress(
+                    albumIds = albumIds,
+                    currentAlbum = albumIds.first(),
+                    phase = SyncProgress.Phase.FETCHING_METADATA,
+                ),
+            )
+        }
 
         val inputData = Data.Builder()
             .putStringArray(MediaCacheWorker.KEY_ALBUM_IDS, albumIds.toTypedArray())
@@ -98,7 +116,7 @@ class SyncScheduler @Inject constructor(
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             MediaCacheWorker.WORK_NAME,
-            ExistingWorkPolicy.KEEP,
+            immediateSyncPolicy(replaceRunning),
             workRequest,
         )
         return true
@@ -127,6 +145,8 @@ class SyncScheduler @Inject constructor(
 
     val syncProgress = mediaCacheRepository.syncProgress
 }
+
+internal fun immediateSyncPolicy(replaceRunning: Boolean): ExistingWorkPolicy = if (replaceRunning) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP
 
 internal fun isAnyAlbumSyncStale(
     albumIds: List<String>,

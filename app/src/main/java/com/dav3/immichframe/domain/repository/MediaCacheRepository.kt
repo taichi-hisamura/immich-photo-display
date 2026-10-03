@@ -62,4 +62,5 @@ interface MediaCacheRepository {
 
     // Progress tracking
     val syncProgress: StateFlow<SyncProgress?>
+    fun updateSyncProgress(progress: SyncProgress)
 }

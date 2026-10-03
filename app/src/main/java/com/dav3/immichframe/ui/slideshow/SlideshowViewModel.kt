@@ -112,14 +112,22 @@ constructor(
             }
             val uniqueCachedAssets = cachedAssets.distinctBy(Asset::id)
 
-            val fallbackAsset = settingsRepo.fallbackAssetId.first()
+            val fallbackAssetId = settingsRepo.fallbackAssetId.first()
+            val fallbackAsset = fallbackAssetId
                 ?.let { assetId -> cacheRepo.getCachedAsset(assetId)?.toAsset() }
-            if (fallbackAsset != null) {
-                cacheRepo.retainAssetForDisplay(fallbackAsset.id)
-                retainedDisplayAssetId = fallbackAsset.id
-                resolveLocalPaths(uniqueCachedAssets + fallbackAsset)
+            if (uniqueCachedAssets.isNotEmpty() && fallbackAssetId != null) {
+                // The fallback lease is only for a genuinely empty cache. A
+                // later successful sync must restore the full slideshow
+                // instead of pinning every new screen instance to one photo.
+                settingsRepo.setFallbackAssetId(null)
+            }
+            val displayFallback = fallbackForDisplay(uniqueCachedAssets, fallbackAsset)
+            if (displayFallback != null) {
+                cacheRepo.retainAssetForDisplay(displayFallback.id)
+                retainedDisplayAssetId = displayFallback.id
+                resolveLocalPaths(uniqueCachedAssets + displayFallback)
                 _uiState.value = SlideshowUiState(
-                    assets = listOf(fallbackAsset),
+                    assets = listOf(displayFallback),
                     isLoading = false,
                     isShowingFallback = true,
                 )
@@ -386,6 +394,11 @@ constructor(
         return immichRepo.thumbnailUrl(assetId)
     }
 }
+
+internal fun fallbackForDisplay(
+    cachedAssets: List<Asset>,
+    fallbackAsset: Asset?,
+): Asset? = fallbackAsset?.takeIf { cachedAssets.isEmpty() }
 
 /**
  * Returns true if the exception indicates the album no longer exists on the

@@ -83,6 +83,7 @@ fun ImmichNavHost(
         composable(Routes.SETUP) {
             SetupScreen(
                 suppressOnboarding = suppressAutoTour,
+                intentGeneration = launchGeneration,
                 onSuccess = {
                     // After authentication, show Settings so the user can
                     // configure the frame before picking albums. Settings back
@@ -134,13 +135,18 @@ fun ImmichNavHost(
             SettingsScreen(
                 suppressOnboarding = suppressAutoTour,
                 onBack = {
-                    val destination = startRoute
-                    if (destination != null && destination != Routes.SETTINGS) {
-                        navController.navigate(destination) {
-                            popUpTo(0) { inclusive = true }
+                    // Runtime Settings is normally opened on top of the
+                    // slideshow. Pop back to that existing destination so its
+                    // ViewModel, current photo, and playback state survive.
+                    // First-run setup removes its previous destination, so it
+                    // still needs the state-derived fallback route.
+                    if (!navController.popBackStack()) {
+                        val destination = startRoute
+                        if (destination != null && destination != Routes.SETTINGS) {
+                            navController.navigate(destination) {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
-                    } else {
-                        navController.popBackStack()
                     }
                 },
                 onChangeAlbums = {

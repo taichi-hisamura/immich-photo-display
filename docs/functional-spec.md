@@ -22,7 +22,7 @@
      offers auto-generation for users who don't have a key yet.
    - **Generate Key** (helper button): Email + password fields. App calls
      `POST /auth/login` → obtains a JWT → `POST /api-keys` to create a scoped
-     key with 5 permissions → `POST /auth/logout` to invalidate the session.
+     key with 4 permissions → `POST /auth/logout` to invalidate the session.
      Password is used once and never persisted; the login session is closed
      immediately after key creation so the device does not appear in the
      server's "Authorized Devices" list. The API key is independent of the
@@ -35,10 +35,11 @@
      OAuth" → browser opens via Custom Tabs (PKCE flow) → callback deep-link
      returns to the app → JWT obtained → key created → session logged out.
 4. App validates the key by calling `GET /users/me`.
-5. **Permission verification**: App probes all 4 required endpoints in
-   dependency order (user → albums → search → thumbnail) to verify
-   the key has the necessary scopes. Results are stored as `permission_status`
-   in DataStore.
+5. **Permission verification**: App probes all 4 required endpoints
+   independently (user, albums, global one-item asset search, thumbnail) to
+   verify the key has the necessary scopes. A failure in one endpoint does not
+   suppress the remaining probes. Results are stored as `permission_status` in
+   DataStore.
    - If a **blocking** permission is missing (`user.read`, `album.read`,
      `asset.read`, `asset.view`), setup is blocked with an error showing
      which permissions are missing and a shortcut to generate a properly-
@@ -117,6 +118,9 @@ action that saves the selected albums.
     the app logs the asset ID and automatically skips to the next photo. A
     late callback from an older transition cannot mark the newly visible photo
     ready or skip it.
+15. Returning from Android Home or from runtime Settings preserves the current
+    slideshow instance and current photo. Playback, progress, and the 5-second
+    control auto-hide timer restart on every foreground return.
 
 **Offline / album lifecycle:**
 - **Server unreachable**: the slideshow continues displaying cached media
@@ -135,7 +139,8 @@ action that saves the selected albums.
    confirms that the selected album contains zero assets. If all selected
    albums are confirmed empty, the active photo remains as a fallback and the
    controls show **"0 photos · displaying the last photo"** until new media
-   is synchronized.
+   is synchronized. Once normal cached media exists again, it takes precedence
+   and the persisted fallback is cleared.
 
 ### F4: In-Slideshow Controls
 
@@ -335,7 +340,9 @@ Options:
   - **Auto Sync** — automatically download new photos and remove deleted
     ones in the background (default on)
   - **Sync Interval** — 60, 180, 360, 720, or 1440 minutes (default 360)
-  - **Sync Now** — trigger an immediate one-time sync
+  - **Sync Now** — replace any failed/retrying one-time sync and start a fresh
+    synchronization. The previous error is cleared immediately; a new failure
+    shows its available HTTP, network, or worker error detail.
 - **Clock** section:
   - **Show Clock** — display time overlay (default off)
   - **Clock Size** — slider 24–96 sp (default 48)

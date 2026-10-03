@@ -201,11 +201,11 @@ fun SlideshowScreen(
     val currentAsset = state.assets.getOrNull(state.currentIndex)
     val currentAssetId = currentAsset?.id
     var imageReadyAssetId by remember { mutableStateOf<String?>(null) }
-    val imageReady = imageReadyAssetId == currentAssetId && currentAssetId != null
-    LaunchedEffect(currentAssetId) {
-        // Videos are immediately "ready" — ExoPlayer handles its own timeline.
-        imageReadyAssetId = if (currentAsset?.type == AssetType.VIDEO) currentAssetId else null
-    }
+    // Do not clear readiness in a LaunchedEffect keyed to currentAssetId.
+    // Coil can report Success before that effect runs, which used to erase the
+    // success signal and leave the progress timer stopped until the watchdog
+    // skipped the photo. A stale ID cannot match the new current asset anyway.
+    val imageReady = isAssetReadyForPlayback(currentAsset, imageReadyAssetId)
     LaunchedEffect(
         currentAssetId,
         isPaused,
@@ -268,7 +268,13 @@ fun SlideshowScreen(
 
     // Returning from Settings can keep this screen in the back stack. Include
     // lifecycle state so the timeout restarts when the slideshow resumes.
-    LaunchedEffect(controlsVisible, tourState.isActive, isScreenActive) {
+    LaunchedEffect(
+        controlsVisible,
+        tourState.isActive,
+        isScreenActive,
+        resumeGeneration,
+        launchGeneration,
+    ) {
         if (controlsVisible && !tourState.isActive && isScreenActive) {
             delay(5000)
             controlsVisible = false
@@ -693,6 +699,13 @@ fun SlideshowScreen(
         }
     }
 }
+
+internal fun isAssetReadyForPlayback(
+    currentAsset: Asset?,
+    imageReadyAssetId: String?,
+): Boolean = currentAsset?.let { asset ->
+    asset.type == AssetType.VIDEO || asset.id == imageReadyAssetId
+} ?: false
 
 private const val TAG_VIDEO = "VideoPlayer"
 
