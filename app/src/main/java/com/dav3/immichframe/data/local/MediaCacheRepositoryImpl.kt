@@ -212,7 +212,7 @@ class MediaCacheRepositoryImpl @Inject constructor(
     }
 
     // Called by MediaCacheWorker to surface progress in the UI
-    internal fun updateSyncProgress(progress: SyncProgress) {
+    override fun updateSyncProgress(progress: SyncProgress) {
         _syncProgress.value = progress
     }
 

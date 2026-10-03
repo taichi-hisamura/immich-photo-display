@@ -49,96 +49,49 @@ constructor(
     // ------------------------------------------------------------------
 
     /**
-     * Probe each required endpoint in dependency order to determine which
-     * permissions the current API key actually has. Mirrors the logic in
-     * scripts/check-api-key.sh:
+     * Probe each required endpoint independently to determine which
+     * permissions the current API key actually has:
      *
      * 1. GET /users/me           → user.read
      * 2. GET /albums             → album.read
-     * 3. POST /search/metadata   → asset.read (searches accessible albums)
+     * 3. POST /search/metadata   → asset.read (global one-item search)
      * 4. GET /assets/{id}/thumbnail → asset.view (uses the first found asset)
      *
-     * If an upstream step fails, downstream probes are marked Unknown.
+     * A failure in one endpoint must not prevent the remaining permissions
+     * from being checked. This also distinguishes denial from transient
+     * server/network errors instead of reporting a false grant.
      */
     override suspend fun checkPermissions(): Result<PermissionCheckResult> = runCatching {
         val api = getApi()
         val statuses = mutableMapOf<RequiredPermission, PermissionStatus>()
 
         // 1. user.read
-        val userOk = try {
-            api.getCurrentUser()
-            true
-        } catch (e: retrofit2.HttpException) {
-            e.code() != 403 // 403 = denied, other errors = network/server issue
-        } catch (e: Exception) {
-            true // network error — don't penalize, treat as pass
-        }
-        statuses[RequiredPermission.USER_READ] =
-            if (userOk) PermissionStatus.Granted else PermissionStatus.Denied
-
-        if (!userOk) {
-            // Can't test anything downstream if we can't even read the user
-            RequiredPermission.entries.filter { it != RequiredPermission.USER_READ }.forEach {
-                statuses[it] = PermissionStatus.Unknown
-            }
-            return@runCatching PermissionCheckResult(statuses.toMap())
-        }
+        statuses[RequiredPermission.USER_READ] = probePermission { api.getCurrentUser() }
 
         // 2. album.read
-        val albums = try {
-            api.getAlbums()
-        } catch (e: retrofit2.HttpException) {
-            statuses[RequiredPermission.ALBUM_READ] = if (e.code() == 403) {
-                PermissionStatus.Denied
-            } else {
-                PermissionStatus.Granted // server error, not a permission issue
-            }
-            null
-        } catch (e: Exception) {
-            null
-        }
-        if (statuses[RequiredPermission.ALBUM_READ] == null) {
-            statuses[RequiredPermission.ALBUM_READ] =
-                if (albums != null) PermissionStatus.Granted else PermissionStatus.Unknown
-        }
-
-        if (albums.isNullOrEmpty()) {
-            // No albums (or can't access) → can't probe asset endpoints
-            RequiredPermission.entries.filter {
-                it != RequiredPermission.USER_READ && it != RequiredPermission.ALBUM_READ
-            }.forEach {
-                if (it !in statuses) statuses[it] = PermissionStatus.Unknown
-            }
-            return@runCatching PermissionCheckResult(statuses.toMap())
-        }
+        var albums: List<AlbumDto> = emptyList()
+        statuses[RequiredPermission.ALBUM_READ] = probePermission { albums = api.getAlbums() }
 
         // 3. asset.read
         var firstAssetId: String? = null
-        try {
-            // The first accessible album can be empty. Continue through the
-            // list until an asset is available for the asset.view probe.
-            firstAssetId = findFirstAssetIdForPermissionProbe(albums.map(AlbumDto::id)) { albumId ->
-                api.searchAssets(SearchMetadataRequest(albumIds = listOf(albumId)))
-            }
-            statuses[RequiredPermission.ASSET_READ] = PermissionStatus.Granted
-        } catch (e: retrofit2.HttpException) {
-            statuses[RequiredPermission.ASSET_READ] = if (e.code() == 403) {
-                PermissionStatus.Denied
-            } else {
-                PermissionStatus.Granted
-            }
-        } catch (e: Exception) {
-            statuses[RequiredPermission.ASSET_READ] = PermissionStatus.Unknown
+        statuses[RequiredPermission.ASSET_READ] = probePermission {
+            firstAssetId = api.searchAssets(
+                SearchMetadataRequest(albumIds = emptyList(), size = 1),
+            ).assets.items.firstOrNull()?.id
+        }
+        if (firstAssetId == null) {
+            firstAssetId = albums.firstNotNullOfOrNull(AlbumDto::albumThumbnailAssetId)
         }
 
-        if (firstAssetId == null) {
+        val probeAssetId = firstAssetId
+        if (probeAssetId == null) {
             statuses[RequiredPermission.ASSET_VIEW] = PermissionStatus.Unknown
             return@runCatching PermissionCheckResult(statuses.toMap())
         }
 
         // 4. asset.view (thumbnail)
         statuses[RequiredPermission.ASSET_VIEW] = probeAssetPermission(
-            assetId = firstAssetId,
+            assetId = probeAssetId,
             suffix = "/thumbnail?size=preview",
         )
 
@@ -416,17 +369,13 @@ constructor(
     }
 }
 
-/**
- * Finds an asset suitable for the asset.view permission probe without assuming
- * that the first accessible album contains media.
- */
-internal suspend fun findFirstAssetIdForPermissionProbe(
-    albumIds: Iterable<String>,
-    searchAssets: suspend (String) -> SearchMetadataResponse,
-): String? {
-    for (albumId in albumIds) {
-        val assetId = searchAssets(albumId).assets.items.firstOrNull()?.id
-        if (assetId != null) return assetId
-    }
-    return null
+internal suspend fun probePermission(block: suspend () -> Unit): PermissionStatus = try {
+    block()
+    PermissionStatus.Granted
+} catch (error: retrofit2.HttpException) {
+    permissionStatusForHttpCode(error.code())
+} catch (_: Exception) {
+    PermissionStatus.Unknown
 }
+
+internal fun permissionStatusForHttpCode(code: Int): PermissionStatus = if (code == 403) PermissionStatus.Denied else PermissionStatus.Unknown

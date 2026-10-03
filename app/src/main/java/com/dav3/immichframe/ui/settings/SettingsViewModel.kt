@@ -321,6 +321,6 @@ constructor(
 
     fun syncNow() = viewModelScope.launch {
         val albumIds = settingsRepo.selectedAlbumIds.first()
-        syncRequestedFlow.value = syncScheduler.syncNow(albumIds)
+        syncRequestedFlow.value = syncScheduler.syncNow(albumIds, replaceRunning = true)
     }
 }

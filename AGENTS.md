@@ -145,6 +145,15 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-10-03** — Foreground slideshow continuity and independent permission
+  probes. Returning from runtime Settings or Android Home must preserve the
+  current slideshow, restart progress/control-hide effects, and prefer normal
+  cached media over a stale empty-album fallback. Manual Sync Now replaces a
+  failed/retrying one-time job. API permission endpoints are probed
+  independently; only HTTP 403 is denied, while transport/server failures are
+  unknown. Updated: navigation, playback/cache/sync implementation, API and
+  product documentation.
+
 - **2026-10-03** — Release signing and version management. Production APKs
   are built locally on Windows with the owner-managed release keystore. The
   keystore and passwords are not stored in Git, GitHub Actions secrets, or

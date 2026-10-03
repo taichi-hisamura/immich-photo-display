@@ -40,6 +40,7 @@ import com.dav3.immichframe.ui.theme.ImmichFrameTheme
 fun SetupScreen(
     onSuccess: () -> Unit,
     suppressOnboarding: Boolean = false,
+    intentGeneration: Int = 0,
     viewModel: SetupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -57,7 +58,7 @@ fun SetupScreen(
     val context = LocalContext.current
 
     // Handle OAuth callback deep link
-    LaunchedEffect(Unit) {
+    LaunchedEffect(intentGeneration) {
         val intent = (context as? android.app.Activity)?.intent
         val data = intent?.data
         if (data != null && data.scheme == "com.dav3.immichframe" && data.host == "oauth-callback") {

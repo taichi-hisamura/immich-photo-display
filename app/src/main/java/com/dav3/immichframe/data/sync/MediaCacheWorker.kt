@@ -54,13 +54,13 @@ class MediaCacheWorker @AssistedInject constructor(
             try {
                 performFullSync(albumIds)
                 ListenableWorker.Result.success()
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 mediaCacheRepository.updateSyncProgress(
                     SyncProgress(
                         albumIds = albumIds,
                         currentAlbum = albumIds.lastOrNull().orEmpty(),
                         phase = SyncProgress.Phase.ERROR,
-                        currentAsset = "Check the connection and try again.",
+                        currentAsset = error.toSyncErrorMessage(),
                     ),
                 )
                 if (runAttemptCount < MAX_RETRY_ATTEMPTS) {
@@ -305,6 +305,16 @@ class MediaCacheWorker @AssistedInject constructor(
         private const val FOREGROUND_NOTIFICATION_ID = 1001
         private const val FOREGROUND_CHANNEL_ID = "media_cache_sync"
         private val syncMutex = Mutex()
+    }
+}
+
+internal fun Throwable.toSyncErrorMessage(): String {
+    val root = generateSequence(this) { it.cause }.last()
+    val detail = root.message?.trim()?.takeIf(String::isNotEmpty)?.take(160)
+    return when (root) {
+        is retrofit2.HttpException -> "Immich returned HTTP ${root.code()}${detail?.let { ": $it" }.orEmpty()}"
+        is java.io.IOException -> detail ?: "Network connection failed"
+        else -> detail ?: "Synchronization failed"
     }
 }
 

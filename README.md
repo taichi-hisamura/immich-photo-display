@@ -40,7 +40,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Photo animations (Ken Burns: zoom in/out, pan left/right/up/down, or random) — also serves as burn-in protection
 - Adaptive background (fills letterbox bars with each photo's edge colors as a gradient)
 - Shuffle mode for randomized image order
-- Progress bar showing time remaining per image
+- Progress bar showing time remaining per image, with playback restored after
+  Home or Settings foreground returns
 - Optional slideshow controls — hide playback buttons and navigation arrows for
   unattended or touch-sensitive frames
 - Failed or unresponsive image loads are skipped automatically so the frame
@@ -49,7 +50,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Launcher mode (Home replacement) — the most reliable boot method for dedicated photo frames; bypasses BOOT_COMPLETED entirely
 - Automatic post-update recovery — a configured frame restores its display schedule, wakes the panel, and resumes the slideshow after an in-place APK update
 - Fork self-update disabled until a fork-owned signed release channel exists
-- Preview-only offline cache with a six-hour default background sync
+- Preview-only offline cache with a six-hour default background sync and a
+  fresh replace-and-retry path for manual synchronization
 - Display Sleep Schedule — recommended: turns the display off after the device timeout and wakes it silently at configured daily times; on Android 12+ it guides the user to grant Alarms & reminders for on-time transitions
 - Night Mode — fallback: keeps photos visible while dimming the screen during set hours when display sleep is not reliable
 - Auto-resumes last album on launch

@@ -36,6 +36,8 @@ predictable data use, offline display, safe retry, and unattended operation.
 - Network and download failures preserve the existing cache and ask
   WorkManager to retry. A temporary empty search response does not purge
   cached images.
+- A manual synchronization request replaces a failed or retrying one-time
+  request; automatic stale checks never replace work already in progress.
 - Upstream self-update is disabled and this fork has a distinct application
   ID: `com.familyphotoframe.immichframe.lowbandwidth`.
 
@@ -62,7 +64,8 @@ Room schema version 3 separates physical assets from album membership:
 An empty metadata search never by itself permits cache removal. The worker must
 also see `assetCount = 0` for the same album in Immich album metadata. When all
 selected albums are confirmed empty, the current on-screen preview is retained
-as a local fallback until new media is synchronized.
+as a local fallback until new media is synchronized. A non-empty normal cache
+always supersedes and clears this fallback on the next load.
 
 Migration 2→3 preserves existing cached asset rows and their album
 memberships. Legacy cached videos are detached and removed when no album uses

@@ -63,19 +63,20 @@ album is allowed only when the matching album reports `assetCount = 0`.
 After the API key is stored (whether generated in-app or pasted manually),
 the app probes each required endpoint to verify the key actually has the
 necessary scopes. This mirrors the external `scripts/check-api-key.sh`
-script. Probes run in dependency order:
+script. The four probes run independently, so one unavailable or denied
+endpoint does not hide the status of the others:
 
 | Step | Endpoint | Permission Tested | Auth method | Notes |
 |---|---|---|---|---|
 | 1 | `GET /api/users/me` | `user.read` | `x-api-key` header | Also validates the key itself |
 | 2 | `GET /api/albums` | `album.read` | `x-api-key` header | Returns album list |
-| 3 | `POST /api/search/metadata` | `asset.read` | `x-api-key` header | Returns first asset ID for downstream probes |
-| 4 | `GET /api/assets/{id}/thumbnail?size=preview` | `asset.view` | `x-api-key` header | Same authentication mechanism as downloader and Coil |
+| 3 | `POST /api/search/metadata` | `asset.read` | `x-api-key` header | Global search with `albumIds: []`, limited to one result |
+| 4 | `GET /api/assets/{id}/thumbnail?size=preview` | `asset.view` | `x-api-key` header | Uses the search result, or an album thumbnail ID when the search is empty |
 
-If an upstream probe fails, downstream probes are skipped and marked
-"unknown" (not "denied"). Results are stored as `permission_status` (JSON)
-in DataStore and refreshed every time the Settings screen opens or the
-user taps "Re-check".
+HTTP 403 is reported as "denied". Other HTTP failures and network errors are
+reported as "unknown", never as a false grant. Results are stored as
+`permission_status` (JSON) in DataStore and refreshed every time the Settings
+screen opens or the user taps "Re-check".
 
 ## In-App Auth Endpoints
 

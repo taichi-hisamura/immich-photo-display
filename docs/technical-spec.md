@@ -180,9 +180,11 @@ the header only when scheme, host, port, configured base path, and
 `/api/assets/` path match the configured Immich server. Redirects are disabled
 for all API-key-bearing clients.
 
-The API-key permission probe checks `asset.view` against the first available
-asset across accessible albums. Empty albums are skipped so they do not produce
-a false `Unknown` status for an otherwise valid preview permission.
+The API-key permission probe tests the four endpoints independently. The
+`asset.read` probe performs a global one-item metadata search; the `asset.view`
+probe uses that asset ID, falling back to an album thumbnail ID when the search
+is empty. Only HTTP 403 means denied; other HTTP and network failures remain
+unknown rather than becoming false grants or preventing later probes.
 
 On Android 10 and later, launcher mode uses `RoleManager.ROLE_HOME` to
 determine whether this app holds the Home role. This avoids false launcher-loss
@@ -257,7 +259,15 @@ snapshot at the next normal transition, then releases the lease and removes the
 orphaned preview. If all selected albums are confirmed empty, the current asset
 is stored as `fallback_asset_id` in DataStore and remains on-screen until new
 cached media is available. The Media Cache section and slideshow controls then
-show `0 photos · displaying the last photo`.
+show `0 photos · displaying the last photo`. On a later load, any non-empty
+normal cache takes precedence over that fallback and clears the stale
+`fallback_asset_id`.
+
+Manual **Sync Now** enqueues unique work with replacement semantics so a
+failed or retrying request cannot absorb the user's retry. Automatic stale
+checks retain keep-existing semantics to avoid restarting active metered syncs.
+The visible sync state is reset before a manual enqueue and preserves the most
+specific available root-cause message on failure.
 
 Cache files are stored in `getExternalFilesDir("media_cache")`.
 
