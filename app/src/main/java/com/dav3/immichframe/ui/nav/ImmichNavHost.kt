@@ -57,7 +57,10 @@ constructor(
 private const val NAV_ANIM = 300
 
 @Composable
-fun ImmichNavHost(suppressInitialOnboarding: Boolean = false) {
+fun ImmichNavHost(
+    suppressInitialOnboarding: Boolean = false,
+    launchGeneration: Int = 0,
+) {
     val navController = rememberNavController()
     val navViewModel: NavViewModel = hiltViewModel()
     val startRoute by navViewModel.startRoute.collectAsState()
@@ -118,6 +121,7 @@ fun ImmichNavHost(suppressInitialOnboarding: Boolean = false) {
         composable(Routes.SLIDESHOW) {
             SlideshowScreen(
                 suppressOnboarding = suppressAutoTour,
+                launchGeneration = launchGeneration,
                 onSettings = { navController.navigate(Routes.SETTINGS) },
                 onChangeAlbums = {
                     navController.navigate(Routes.ALBUMS) {

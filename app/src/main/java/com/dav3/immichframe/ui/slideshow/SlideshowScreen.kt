@@ -96,6 +96,7 @@ fun SlideshowScreen(
     onSettings: () -> Unit,
     onChangeAlbums: () -> Unit,
     suppressOnboarding: Boolean = false,
+    launchGeneration: Int = 0,
     viewModel: SlideshowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -143,19 +144,23 @@ fun SlideshowScreen(
     // activity stops but Compose composition stays alive, so the auto-advance
     // timer and ExoPlayer keep running (audio plays in your pocket). We track
     // the lifecycle and treat "screen active" as a precondition for playback.
-    var isScreenActive by remember { mutableStateOf(true) }
+    var lifecycleState by remember(lifecycleOwner) {
+        mutableStateOf(
+            SlideshowLifecycleState(
+                isScreenActive = lifecycleOwner.lifecycle.currentState
+                    .isAtLeast(Lifecycle.State.RESUMED),
+            ),
+        )
+    }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            isScreenActive = when (event) {
-                Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> true
-                Lifecycle.Event.ON_STOP -> false
-                else -> isScreenActive // ON_PAUSE is ambiguous (system dialog,
-                // transparent overlay); keep current state.
-            }
+            lifecycleState = lifecycleState.onLifecycleEvent(event)
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+    val isScreenActive = lifecycleState.isScreenActive
+    val resumeGeneration = lifecycleState.resumeGeneration
 
     // Track container size for clock position normalization
     var containerSize by remember { mutableStateOf(IntSize(0, 0)) }
@@ -201,7 +206,16 @@ fun SlideshowScreen(
         // Videos are immediately "ready" — ExoPlayer handles its own timeline.
         imageReadyAssetId = if (currentAsset?.type == AssetType.VIDEO) currentAssetId else null
     }
-    LaunchedEffect(currentAssetId, isPaused, isVideoPaused, s.intervalSeconds, imageReady, isScreenActive) {
+    LaunchedEffect(
+        currentAssetId,
+        isPaused,
+        isVideoPaused,
+        s.intervalSeconds,
+        imageReady,
+        isScreenActive,
+        resumeGeneration,
+        launchGeneration,
+    ) {
         progress = 0f
         if (!isPaused && isScreenActive && imageReady && currentAsset != null) {
             if (currentAsset.type == AssetType.VIDEO && !isVideoPaused) {
@@ -224,7 +238,14 @@ fun SlideshowScreen(
     // local preview or a request that never finishes used to leave imageReady
     // false forever, freezing an unattended frame on one photo. Give a stalled
     // request a generous 20 seconds, then move on.
-    LaunchedEffect(currentAssetId, imageReady, isPaused, isScreenActive) {
+    LaunchedEffect(
+        currentAssetId,
+        imageReady,
+        isPaused,
+        isScreenActive,
+        resumeGeneration,
+        launchGeneration,
+    ) {
         if (currentAssetId == null || imageReady || isPaused || !isScreenActive) {
             return@LaunchedEffect
         }
