@@ -47,6 +47,7 @@ lets you pick which album(s) to display, and remembers your choice.
   does not stop on one photo
 - Start on boot (with SYSTEM_ALERT_WINDOW permission for Android 10+ BAL exemption, plus OEM autostart permission detection)
 - Launcher mode (Home replacement) — the most reliable boot method for dedicated photo frames; bypasses BOOT_COMPLETED entirely
+- Automatic post-update recovery — a configured frame restores its display schedule, wakes the panel, and resumes the slideshow after an in-place APK update
 - Fork self-update disabled until a fork-owned signed release channel exists
 - Preview-only offline cache with a six-hour default background sync
 - Display Sleep Schedule — recommended: turns the display off after the device timeout and wakes it silently at configured daily times; on Android 12+ it guides the user to grant Alarms & reminders for on-time transitions

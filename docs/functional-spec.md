@@ -215,6 +215,21 @@ prompting the user to re-select Immich Photo Display as the default Home.
 Toggling Launcher Mode off disables the alias and reverts to normal
 behaviour.
 
+### Post-update unattended recovery
+
+An in-place APK update preserves DataStore settings, encrypted credentials,
+selected albums, and the Room-backed preview cache. Android stops the old app
+process while replacing the package, so a manifest receiver listens for the
+system-only `ACTION_MY_PACKAGE_REPLACED` broadcast. For a fully configured
+frame, the receiver restores the display schedule and resumes the slideshow
+without requiring a remote-control session or a local tap.
+
+The receiver does not wake the device during an intentional Display Sleep
+Schedule window. On Android 10 and later, bringing the app to the foreground
+requires either the granted **Display over other apps** permission or the app
+holding the default Home role. If neither condition is true, settings and cache
+remain intact but Android blocks the unattended foreground launch.
+
 ### F5d: Self-Update via GitHub Releases
 
 On startup (if **Auto-Update** is enabled and the app was NOT installed from the

@@ -69,6 +69,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- Package updates stop the currently running process. Resume a fully
+             configured frame automatically once Android has installed the new
+             APK, while respecting the configured display sleep window. -->
+        <receiver
+            android:name=".PackageReplacedReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".ScreenScheduleReceiver"
             android:exported="false">

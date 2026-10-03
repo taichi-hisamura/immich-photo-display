@@ -47,7 +47,7 @@ class DisplayScheduleManager @Inject constructor(
         when (action) {
             ACTION_SLEEP -> settingsRepository.setScreenScheduleSleeping(true)
             ACTION_WAKE -> {
-                wakeScreen()
+                wakeScreenNow()
                 settingsRepository.setScreenScheduleSleeping(false)
             }
             else -> return
@@ -91,7 +91,7 @@ class DisplayScheduleManager @Inject constructor(
     )
 
     @Suppress("DEPRECATION")
-    private fun wakeScreen() {
+    internal fun wakeScreenNow() {
         val powerManager = context.getSystemService(PowerManager::class.java)
         powerManager.newWakeLock(
             PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
