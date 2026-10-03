@@ -86,6 +86,7 @@ immich-android/
 │   │   │   ├── nav/             # Navigation graph
 │   │   │   └── theme/           # Material 3 theme
 │   │   ├── BootReceiver.kt      # BOOT_COMPLETED → launch slideshow (guards startActivity with SYSTEM_ALERT_WINDOW check)
+│   │   ├── PackageReplacedReceiver.kt # MY_PACKAGE_REPLACED → restore schedule, wake, resume configured frame
 │   │   ├── ImmichFrameApp.kt    # Application class (@HiltAndroidApp)
 │   │   └── MainActivity.kt      # Single activity (also target of LauncherAlias)
 │   ├── src/main/res/
@@ -187,6 +188,15 @@ On Android 10 and later, launcher mode uses `RoleManager.ROLE_HOME` to
 determine whether this app holds the Home role. This avoids false launcher-loss
 warnings where a generic intent resolution returns the system resolver despite
 a persistent Home selection.
+
+After an in-place APK update, Android sends the system-protected
+`ACTION_MY_PACKAGE_REPLACED` broadcast to `PackageReplacedReceiver`. The
+receiver re-applies the display schedule, verifies that server credentials and
+at least one album are configured, and leaves an intentional schedule sleep
+undisturbed. Otherwise it briefly acquires a screen wake lock and launches the
+frame when either `SYSTEM_ALERT_WINDOW` is granted or the app still holds the
+Home role. App-private DataStore, encrypted preferences, Room data, and cached
+preview files are not cleared by an in-place update.
 
 ## Media Cache (Room + WorkManager)
 
@@ -378,7 +388,7 @@ or Android throws `IllegalStateException`.
 | `RECEIVE_BOOT_COMPLETED` | Start-on-boot feature |
 | `REQUEST_INSTALL_PACKAGES` | Self-update via GitHub releases (APK install) |
 | `SYSTEM_ALERT_WINDOW` | Background Activity Launch exemption — required on Android 10+ (API 29+) for `BootReceiver` to call `startActivity()` from a `BOOT_COMPLETED` broadcast. Without it the OS silently blocks the launch. |
-| `WAKE_LOCK` | Briefly wakes the display at the configured Display Sleep Schedule wake time; never held continuously by the scheduler. |
+| `WAKE_LOCK` | Briefly wakes the display at the configured Display Sleep Schedule wake time or after a configured frame is updated; never held continuously. |
 | `SCHEDULE_EXACT_ALARM` | Android 12+ special access (“Alarms & reminders”) for on-time display-sleep transitions; requested only from the schedule setting. |
 
 ## Localization
