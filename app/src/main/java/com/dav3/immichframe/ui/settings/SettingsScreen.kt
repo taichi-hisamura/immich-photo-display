@@ -114,6 +114,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onChangeAlbums: () -> Unit,
     onReset: () -> Unit,
+    suppressOnboarding: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel(),
     updateViewModel: com.dav3.immichframe.ui.update.UpdateViewModel = hiltViewModel(),
 ) {
@@ -222,7 +223,7 @@ fun SettingsScreen(
         onSkipped = { },
         // Do not briefly show the centered overview step while DataStore is
         // still loading the already-completed tour IDs.
-        enabled = completedSteps != null,
+        enabled = completedSteps != null && !suppressOnboarding,
         tourState = tourState,
         onScrollToTarget = { targetKey ->
             // Scroll the target section header into view
@@ -302,6 +303,18 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.muted_desc),
                     checked = s.muted,
                     onToggle = { viewModel.toggleMuted() },
+                )
+                SwitchItem(
+                    title = stringResource(R.string.show_playback_controls),
+                    subtitle = stringResource(R.string.show_playback_controls_desc),
+                    checked = s.showPlaybackControls,
+                    onToggle = { viewModel.toggleShowPlaybackControls() },
+                )
+                SwitchItem(
+                    title = stringResource(R.string.show_navigation_controls),
+                    subtitle = stringResource(R.string.show_navigation_controls_desc),
+                    checked = s.showNavigationControls,
+                    onToggle = { viewModel.toggleShowNavigationControls() },
                 )
 
                 // Photo Animations

@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">写真のみ表示</string>
     <string name="muted">ミュート</string>
     <string name="muted_desc">動画の音声をミュート</string>
+    <string name="show_playback_controls">再生操作を表示</string>
+    <string name="show_playback_controls_desc">操作表示時に一時停止／再生と消音ボタンを表示</string>
+    <string name="show_navigation_controls">写真移動ボタンを表示</string>
+    <string name="show_navigation_controls_desc">操作表示時に前の写真／次の写真ボタンを表示</string>
     <string name="photo_animations">写真アニメーション</string>
     <string name="photo_animations_desc">写真に微妙なズームとパン効果を適用</string>
     <string name="photo_animations_hint">有効なタイプから各写真ごとにランダムな効果が選択されます</string>

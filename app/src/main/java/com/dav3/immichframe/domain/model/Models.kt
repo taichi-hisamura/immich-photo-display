@@ -52,6 +52,8 @@ data class SlideshowSettings(
     val shuffle: Boolean = true,
     val skipVideos: Boolean = true,
     val muted: Boolean = true,
+    val showPlaybackControls: Boolean = true,
+    val showNavigationControls: Boolean = true,
     val startOnBoot: Boolean = false,
     val launcherMode: Boolean = false,
     val bootVerified: Boolean = false,

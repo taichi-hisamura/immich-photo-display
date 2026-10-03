@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">Показывать только фото</string>
     <string name="muted">Без звука</string>
     <string name="muted_desc">Отключить звук видео</string>
+    <string name="show_playback_controls">Показывать управление воспроизведением</string>
+    <string name="show_playback_controls_desc">Показывать кнопки паузы/воспроизведения и отключения звука</string>
+    <string name="show_navigation_controls">Показывать навигацию</string>
+    <string name="show_navigation_controls_desc">Показывать кнопки предыдущего и следующего фото</string>
     <string name="photo_animations">Анимация фото</string>
     <string name="photo_animations_desc">Лёгкие эффекты масштабирования и панорамирования для фото</string>
     <string name="photo_animations_hint">Для каждого фото случайным образом выбирается эффект из включённых типов</string>

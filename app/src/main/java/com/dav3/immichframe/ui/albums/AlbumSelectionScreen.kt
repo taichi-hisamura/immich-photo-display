@@ -40,6 +40,7 @@ fun AlbumSelectionScreen(
     onStartSlideshow: () -> Unit,
     onSettings: () -> Unit,
     onBackToSettings: (() -> Unit)? = null,
+    suppressOnboarding: Boolean = false,
     viewModel: AlbumSelectionViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -52,6 +53,7 @@ fun AlbumSelectionScreen(
         completedSteps = completedSteps,
         onStepCompleted = viewModel::markStepCompleted,
         onSkipped = { },
+        enabled = !suppressOnboarding,
         tourState = tourState,
     ) {
         AlbumSelectionContent(

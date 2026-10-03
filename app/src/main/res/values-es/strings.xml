@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">Mostrar solo fotos</string>
     <string name="muted">Silenciado</string>
     <string name="muted_desc">Silenciar el audio del vídeo</string>
+    <string name="show_playback_controls">Mostrar controles de reproducción</string>
+    <string name="show_playback_controls_desc">Mostrar los botones de pausa/reproducción y silencio</string>
+    <string name="show_navigation_controls">Mostrar controles de navegación</string>
+    <string name="show_navigation_controls_desc">Mostrar los botones de foto anterior y siguiente</string>
     <string name="photo_animations">Animaciones de foto</string>
     <string name="photo_animations_desc">Efectos sutiles de zoom y desplazamiento en las fotos</string>
     <string name="photo_animations_hint">Se elige un efecto aleatorio de los tipos activados para cada foto</string>

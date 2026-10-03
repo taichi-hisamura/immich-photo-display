@@ -95,6 +95,8 @@ the screenshot that demonstrates the outcome.
 | **Shuffle** | On | Randomizes photo order. Off = sequential (album order). No visible UI difference — affects playback sequence only. |
 | **Skip Videos** | On (locked) | Only photos are synchronized and shown. |
 | **Muted** | On | Retained from upstream; no effect in image-only mode. |
+| **Show Playback Controls** | On | Shows or hides the pause/play and mute buttons in the slideshow overlay. |
+| **Show Navigation Controls** | On | Shows or hides the previous/next photo buttons in the slideshow overlay. |
 
 ---
 

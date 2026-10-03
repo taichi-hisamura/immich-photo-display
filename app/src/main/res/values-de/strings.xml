@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">Nur Fotos anzeigen</string>
     <string name="muted">Stummgeschaltet</string>
     <string name="muted_desc">Video-Audio stummschalten</string>
+    <string name="show_playback_controls">Wiedergabesteuerung anzeigen</string>
+    <string name="show_playback_controls_desc">Pause-/Wiedergabe- und Stummschalttasten anzeigen</string>
+    <string name="show_navigation_controls">Navigation anzeigen</string>
+    <string name="show_navigation_controls_desc">Tasten für vorheriges und nächstes Foto anzeigen</string>
     <string name="photo_animations">Foto-Animationen</string>
     <string name="photo_animations_desc">Dezente Zoom- und Schwenkeffekte bei Fotos</string>
     <string name="photo_animations_hint">Für jedes Foto wird zufällig ein Effekt aus den aktivierten Typen gewählt</string>

@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">사진만 표시</string>
     <string name="muted">음소거</string>
     <string name="muted_desc">동영상 오디오 음소거</string>
+    <string name="show_playback_controls">재생 제어 표시</string>
+    <string name="show_playback_controls_desc">컨트롤 표시 시 일시정지/재생 및 음소거 버튼 표시</string>
+    <string name="show_navigation_controls">탐색 제어 표시</string>
+    <string name="show_navigation_controls_desc">이전 및 다음 사진 버튼 표시</string>
     <string name="photo_animations">사진 애니메이션</string>
     <string name="photo_animations_desc">사진에 미세한 확대 및 패닝 효과 적용</string>
     <string name="photo_animations_hint">활성화된 유형에서 각 사진마다 임의의 효과가 선택됩니다</string>

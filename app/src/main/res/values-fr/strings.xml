@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">Afficher uniquement les photos</string>
     <string name="muted">Muet</string>
     <string name="muted_desc">Couper l\'audio des vidéos</string>
+    <string name="show_playback_controls">Afficher les commandes de lecture</string>
+    <string name="show_playback_controls_desc">Afficher les boutons pause/lecture et muet</string>
+    <string name="show_navigation_controls">Afficher les commandes de navigation</string>
+    <string name="show_navigation_controls_desc">Afficher les boutons photo précédente et suivante</string>
     <string name="photo_animations">Animations photo</string>
     <string name="photo_animations_desc">Effets subtils de zoom et de défilement sur les photos</string>
     <string name="photo_animations_hint">Un effet aléatoire est choisi parmi les types activés pour chaque photo</string>

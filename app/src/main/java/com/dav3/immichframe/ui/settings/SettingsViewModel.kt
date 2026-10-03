@@ -206,6 +206,14 @@ constructor(
 
     fun toggleMuted() = update { it.copy(muted = !it.muted) }
 
+    fun toggleShowPlaybackControls() = update {
+        it.copy(showPlaybackControls = !it.showPlaybackControls)
+    }
+
+    fun toggleShowNavigationControls() = update {
+        it.copy(showNavigationControls = !it.showNavigationControls)
+    }
+
     fun toggleStartOnBoot() = update {
         it.copy(startOnBoot = !it.startOnBoot, bootVerified = false)
     }

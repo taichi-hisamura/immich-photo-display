@@ -59,6 +59,8 @@ constructor(
         val SHUFFLE = stringPreferencesKey("shuffle")
         val SKIP_VIDEOS = stringPreferencesKey("skip_videos")
         val MUTED = stringPreferencesKey("muted")
+        val SHOW_PLAYBACK_CONTROLS = stringPreferencesKey("show_playback_controls")
+        val SHOW_NAVIGATION_CONTROLS = stringPreferencesKey("show_navigation_controls")
         val START_ON_BOOT = stringPreferencesKey("start_on_boot")
         val LAUNCHER_MODE = stringPreferencesKey("launcher_mode")
         val BOOT_VERIFIED = stringPreferencesKey("boot_verified")
@@ -151,6 +153,8 @@ constructor(
                 shuffle = prefs[Keys.SHUFFLE]?.toBoolean() ?: true,
                 skipVideos = true,
                 muted = prefs[Keys.MUTED]?.toBoolean() ?: true,
+                showPlaybackControls = prefs[Keys.SHOW_PLAYBACK_CONTROLS]?.toBoolean() ?: true,
+                showNavigationControls = prefs[Keys.SHOW_NAVIGATION_CONTROLS]?.toBoolean() ?: true,
                 startOnBoot = prefs[Keys.START_ON_BOOT]?.toBoolean() ?: false,
                 launcherMode = prefs[Keys.LAUNCHER_MODE]?.toBoolean() ?: false,
                 bootVerified = prefs[Keys.BOOT_VERIFIED]?.toBoolean() ?: false,
@@ -249,6 +253,8 @@ constructor(
             it[Keys.SHUFFLE] = settings.shuffle.toString()
             it[Keys.SKIP_VIDEOS] = true.toString()
             it[Keys.MUTED] = settings.muted.toString()
+            it[Keys.SHOW_PLAYBACK_CONTROLS] = settings.showPlaybackControls.toString()
+            it[Keys.SHOW_NAVIGATION_CONTROLS] = settings.showNavigationControls.toString()
             it[Keys.START_ON_BOOT] = settings.startOnBoot.toString()
             it[Keys.LAUNCHER_MODE] = settings.launcherMode.toString()
             it[Keys.BOOT_VERIFIED] = settings.bootVerified.toString()

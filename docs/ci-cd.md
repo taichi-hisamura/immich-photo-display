@@ -1,11 +1,117 @@
 ## CI/CD Setup
 
-> **Fork safety status (2026-08-21):** existing workflow descriptions below
-> refer to the upstream repository. In-app self-update is disabled in this
-> fork. Do not enable or publish a production release until a fork-owned
-> GitHub repository, contributor identity, signing key, protected branches,
-> and upgrade policy have been configured. See
-> [low-bandwidth-profile.md](low-bandwidth-profile.md).
+### Current fork release policy
+
+This section is the authoritative release policy for the low-bandwidth fork.
+The inherited workflow documentation later in this file is retained only as
+upstream reference and is not the production release path for this fork.
+In-app self-update remains disabled; ManageEngine Endpoint Central Cloud is
+the production APK distribution channel.
+
+#### Version identifiers
+
+`app/build.gradle.kts` is the source of truth for both Android version fields.
+
+| Identifier | Policy |
+|---|---|
+| `versionName` | SemVer `MAJOR.MINOR.PATCH`; the user-visible release version |
+| `versionCode` | Explicit positive integer; strictly increases for every APK distributed to a device |
+| Git tag and GitHub Release | `v<versionName>` |
+| ManageEngine Version Label | Exactly `<versionName>` |
+| Release APK filename | `immich-photo-display-<versionName>.apk` |
+
+The previous timestamp-derived version codes are already in the 1.78-billion
+range. They must not be replaced by a smaller SemVer-derived number because
+Android would reject it as a downgrade. The first release under this policy is
+`versionName = "0.6.0"` and `versionCode = 1800000000`; later
+releases increment the code by at least one. Rebuilding the same release does
+not create a new version: once distributed, changed contents require a new
+`versionName` and a larger `versionCode`.
+
+#### Branch and release flow
+
+- `main` contains integrated, verified code.
+- Daily work uses `feature/<description>` or `fix/<description>` branches.
+- A release uses `release/v<versionName>` and changes both version fields.
+- The release commit is tagged with an annotated `v<versionName>` tag.
+- The exact verified APK is uploaded unchanged to both GitHub Release and
+  ManageEngine. Do not rebuild separate binaries for those destinations.
+- A rollback is a new forward release with reverted code and a larger
+  `versionCode`; do not distribute an older APK over a newer installation.
+
+The fork currently has no `develop` branch, so the simpler `main` plus topic
+branches model is intentional. Introduce `develop` only if the maintenance
+volume justifies the additional merge-back process.
+
+#### Owner-managed release signing
+
+The production signing keystore remains under the owner's direct control.
+Neither the keystore nor its passwords are committed, uploaded to GitHub
+Actions, written to documentation, or stored in persistent environment
+variables. The same signing key must be used for every update to
+`com.familyphotoframe.immichframe.lowbandwidth`.
+
+Run the following in a new PowerShell session from the repository root. Use an
+absolute keystore path. `Read-Host -AsSecureString` keeps passwords out of the
+command history; Gradle receives them only through temporary process
+environment variables, which the `finally` block removes.
+
+```powershell
+$releaseStoreFile = Read-Host "Release keystore absolute path"
+$releaseStorePassword = Read-Host "Keystore password" -AsSecureString
+$releaseKeyAlias = Read-Host "Key alias"
+$releaseKeyPassword = Read-Host "Key password" -AsSecureString
+
+try {
+    $env:SIGNING_STORE_FILE = $releaseStoreFile
+    $env:SIGNING_STORE_PASSWORD = [System.Net.NetworkCredential]::new("", $releaseStorePassword).Password
+    $env:SIGNING_KEY_ALIAS = $releaseKeyAlias
+    $env:SIGNING_KEY_PASSWORD = [System.Net.NetworkCredential]::new("", $releaseKeyPassword).Password
+    $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+
+    .\gradlew.bat clean spotlessApply spotlessCheck lintDebug testDebugUnitTest assembleRelease `
+        --no-daemon --no-configuration-cache
+} finally {
+    Remove-Item Env:SIGNING_STORE_FILE -ErrorAction SilentlyContinue
+    Remove-Item Env:SIGNING_STORE_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:SIGNING_KEY_ALIAS -ErrorAction SilentlyContinue
+    Remove-Item Env:SIGNING_KEY_PASSWORD -ErrorAction SilentlyContinue
+    $releaseStorePassword = $null
+    $releaseKeyPassword = $null
+}
+```
+
+The owner keeps at least two encrypted/offline backups of the keystore and
+records their recovery test separately from the repository. A newly generated
+key cannot update the existing installed app.
+
+#### Release verification
+
+Before tagging or uploading, verify all of the following against the generated
+`app/build/outputs/apk/release/app-release.apk`:
+
+- Application ID is `com.familyphotoframe.immichframe.lowbandwidth`.
+- `versionName` matches the intended SemVer value.
+- `versionCode` is greater than every version already distributed.
+- APK signature verification succeeds and the signer certificate SHA-256 is
+  `C8EFCA24E2E030E0BB7159F56D49247555C8B0ECB4C60371932D574AF57706FF`.
+- SHA-256 of the APK is recorded with the Git tag, source commit, file size,
+  and ManageEngine rollout result. Do not record keystore paths or passwords.
+
+Pilot the exact APK on `pilot-tb-x606x` first. After verifying an in-place
+upgrade, retained settings/cache, slideshow operation, launcher recovery, and
+ManageEngine inventory, approve the same APK for wider distribution. The
+cross-system procedure is documented in the family photo-frame repository's
+`docs/operations/immich_photo_display_release.md` runbook.
+
+### Legacy upstream automation reference
+
+The sections below describe inherited workflows. In particular,
+`.github/workflows/prod-build.yml` still assumes GitHub-hosted signing secrets
+and must not be used for fork production releases under the current policy.
+Before any production automation is enabled, redesign it to trigger only from
+an explicit version tag, validate the tag against both Gradle version fields,
+and preserve owner-managed signing.
 
 ### Branching Strategy
 

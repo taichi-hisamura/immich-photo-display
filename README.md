@@ -41,6 +41,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Adaptive background (fills letterbox bars with each photo's edge colors as a gradient)
 - Shuffle mode for randomized image order
 - Progress bar showing time remaining per image
+- Optional slideshow controls — hide playback buttons and navigation arrows for
+  unattended or touch-sensitive frames
 - Failed or unresponsive image loads are skipped automatically so the frame
   does not stop on one photo
 - Start on boot (with SYSTEM_ALERT_WINDOW permission for Android 10+ BAL exemption, plus OEM autostart permission detection)
@@ -50,7 +52,7 @@ lets you pick which album(s) to display, and remembers your choice.
 - Display Sleep Schedule — recommended: turns the display off after the device timeout and wakes it silently at configured daily times; on Android 12+ it guides the user to grant Alarms & reminders for on-time transitions
 - Night Mode — fallback: keeps photos visible while dimming the screen during set hours when display sleep is not reliable
 - Auto-resumes last album on launch
-- Interactive onboarding tour with coachmark overlays — guides users through setup, album selection, slideshow controls (including back-to-albums and update indicator), and settings; replayable per-screen ("Show Tour Again") or globally ("Reset All Tours")
+- Interactive onboarding tour with coachmark overlays — guides users through setup, album selection, slideshow controls (including back-to-albums and update indicator), and settings; replayable per-screen ("Show Tour Again") or globally ("Reset All Tours"). The tour does not auto-start when the app is launched by the Android Home launcher.
 - Adaptive launcher icon with day/night variants and Android 13+ monochrome (themed icon) support; dedicated debug-build variant (amber background); separate background-free logo drawable for the Setup screen
 - Localized into 13 languages (en, ar, zh, nl, fr, de, it, ja, ko, pl, pt, ru, es)
 - **In-app API key generation** — log in with email/password or OAuth; the app auto-creates a scoped key (no external scripts needed)

@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">仅显示照片</string>
     <string name="muted">静音</string>
     <string name="muted_desc">静音视频音频</string>
+    <string name="show_playback_controls">显示播放控制</string>
+    <string name="show_playback_controls_desc">显示暂停/播放和静音按钮</string>
+    <string name="show_navigation_controls">显示导航控制</string>
+    <string name="show_navigation_controls_desc">显示上一张和下一张照片按钮</string>
     <string name="photo_animations">照片动画</string>
     <string name="photo_animations_desc">对照片应用细微的缩放和平移效果</string>
     <string name="photo_animations_hint">每张照片会从已启用的类型中随机选择一种效果</string>

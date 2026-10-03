@@ -115,7 +115,8 @@ action that saves the selected albums.
     from the other enabled types and requires at least one other type enabled.
 14. If an image fails to decode or does not complete loading within 20 seconds,
     the app logs the asset ID and automatically skips to the next photo. A
-    late callback from an older transition cannot skip the newly visible photo.
+    late callback from an older transition cannot mark the newly visible photo
+    ready or skip it.
 
 **Offline / album lifecycle:**
 - **Server unreachable**: the slideshow continues displaying cached media
@@ -141,6 +142,8 @@ action that saves the selected albums.
 Tap the screen to reveal controls:
 - Previous / Next arrows
 - Pause / Play
+- Optional playback controls: pause/play and mute buttons
+- Optional navigation controls: previous and next buttons
 - Photo count (current position / total)
 - Update status icon (checking / downloading / ready)
 - Launcher switch (apps icon, when Launcher Mode is active)
@@ -271,6 +274,10 @@ Options:
 - **Shuffle** — randomize image order (default on)
 - **Skip Videos** — permanently on and disabled in the UI
 - **Muted** — retained from upstream but has no effect in image-only mode
+- **Show Playback Controls** — show or hide the pause/play and mute buttons in
+  the slideshow overlay (default on)
+- **Show Navigation Controls** — show or hide the previous/next photo buttons
+  in the slideshow overlay (default on)
 - **Photo Animations** — subtle Ken Burns zoom/pan on each photo (default off).
   Also serves as burn-in protection for always-on displays. When enabled,
   reveals individual toggles for: Zoom In, Zoom Out, Pan Left,
@@ -402,6 +409,11 @@ a user lands on a screen — only steps not yet completed are shown.
   any remain, the tour auto-starts for those steps. The Settings screen waits
   for that persisted state to load before evaluating the tour, so a completed
   tour never flashes briefly while the screen opens.
+- When the app is launched by the Android Home intent after being selected as
+  the default launcher, the tour is suppressed on the initial destination.
+  This prevents an operational launcher start from repeatedly showing a
+  coachmark overlay. Navigating to another screen still allows its normal
+  tour, and the existing manual tour replay actions remain available.
 - The overlay shows a semi-transparent scrim over the screen with a
   rounded-rect spotlight cutout around the target element (if any). A tooltip
   card displays the step title, body, step counter ("Step X of Y"), and

@@ -309,6 +309,8 @@ Setup → Albums → Slideshow
 | Shuffle | DataStore | `shuffle` | String bool |
 | Skip videos | DataStore | `skip_videos` | Forced `true` in this fork |
 | Muted | DataStore | `muted` | String bool |
+| Show playback controls | DataStore | `show_playback_controls` | String bool (default true) |
+| Show navigation controls | DataStore | `show_navigation_controls` | String bool (default true) |
 | Start on boot | DataStore | `start_on_boot` | String bool |
 | Launcher mode | DataStore | `launcher_mode` | String bool (enables the Home activity-alias) |
 | Boot verified | DataStore | `boot_verified` | String bool (self-test: BootReceiver sets true on successful fire) |
@@ -342,6 +344,12 @@ Setup → Albums → Slideshow
 > Room column on the `cached_assets` table (version 3 of `media_cache_db`).
 > It retains Immich metadata for diagnostics; all image types still use the
 > static preview endpoint.
+
+When `MainActivity` receives `ACTION_MAIN` with `CATEGORY_HOME`, it treats the
+launch as an Android default-launcher startup and passes a one-time tour
+suppression to the initial navigation destination. The suppression is not
+persisted and is not applied after navigating to another screen, so the
+existing per-screen completion state and manual replay actions remain intact.
 
 All settings flow through a single shared DataStore instance
 (`DataStoreProvider.kt`) — there must be only one DataStore active per file
