@@ -39,6 +39,7 @@ import com.dav3.immichframe.ui.theme.ImmichFrameTheme
 @Composable
 fun SetupScreen(
     onSuccess: () -> Unit,
+    suppressOnboarding: Boolean = false,
     viewModel: SetupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -106,6 +107,7 @@ fun SetupScreen(
         completedSteps = completedSteps,
         onStepCompleted = viewModel::markStepCompleted,
         tourState = tourState,
+        onboardingEnabled = !suppressOnboarding,
     )
 }
 
@@ -134,6 +136,7 @@ fun SetupContent(
     completedSteps: Set<String> = emptySet(),
     onStepCompleted: (String) -> Unit = {},
     tourState: TourState? = null,
+    onboardingEnabled: Boolean = true,
 ) {
     if (showKey) { } // suppress unused warning in previews
     if (showPassword) { }
@@ -143,6 +146,7 @@ fun SetupContent(
             completedSteps = completedSteps,
             onStepCompleted = onStepCompleted,
             onSkipped = { },
+            enabled = onboardingEnabled,
             tourState = tourState,
         ) {
             SetupContentBody(

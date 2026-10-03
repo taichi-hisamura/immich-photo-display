@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">Pokazuj tylko zdjęcia</string>
     <string name="muted">Wyciszony</string>
     <string name="muted_desc">Wycisz dźwięk wideo</string>
+    <string name="show_playback_controls">Pokaż przyciski odtwarzania</string>
+    <string name="show_playback_controls_desc">Pokaż przyciski pauzy/odtwarzania i wyciszania</string>
+    <string name="show_navigation_controls">Pokaż przyciski nawigacji</string>
+    <string name="show_navigation_controls_desc">Pokaż przyciski poprzedniego i następnego zdjęcia</string>
     <string name="photo_animations">Animacje zdjęć</string>
     <string name="photo_animations_desc">Subtelne efekty przybliżenia i panoramowania zdjęć</string>
     <string name="photo_animations_hint">Dla każdego zdjęcia losowo wybierany jest efekt z włączonych typów</string>

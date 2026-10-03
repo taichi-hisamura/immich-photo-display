@@ -80,6 +80,7 @@ import com.dav3.immichframe.domain.model.SlideshowSettings
 import com.dav3.immichframe.domain.system.openOtherLauncher
 import com.dav3.immichframe.ui.onboarding.TourHost
 import com.dav3.immichframe.ui.onboarding.TourScreen
+import com.dav3.immichframe.ui.onboarding.TourStep
 import com.dav3.immichframe.ui.onboarding.TourSteps
 import com.dav3.immichframe.ui.onboarding.rememberTourState
 import com.dav3.immichframe.ui.onboarding.tourTarget
@@ -94,6 +95,7 @@ import java.util.Locale
 fun SlideshowScreen(
     onSettings: () -> Unit,
     onChangeAlbums: () -> Unit,
+    suppressOnboarding: Boolean = false,
     viewModel: SlideshowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -102,8 +104,18 @@ fun SlideshowScreen(
 
     val tourState = rememberTourState()
     val completedSteps by viewModel.onboardingSteps.collectAsState()
-    val tourActive = remember(completedSteps) {
-        TourSteps.forScreen(TourScreen.SLIDESHOW).any { it.id !in completedSteps }
+    val tourStepEnabled = remember(s.showPlaybackControls, s.showNavigationControls) {
+        { step: TourStep ->
+            when (step.id) {
+                "slideshow_nav" -> s.showNavigationControls
+                "slideshow_playback" -> s.showPlaybackControls
+                else -> true
+            }
+        }
+    }
+    val tourActive = remember(suppressOnboarding, completedSteps, s.showPlaybackControls, s.showNavigationControls) {
+        !suppressOnboarding &&
+            TourSteps.forScreen(TourScreen.SLIDESHOW).any { step -> step.id !in completedSteps && tourStepEnabled(step) }
     }
 
     val updateVm: UpdateViewModel = hiltViewModel()
@@ -177,17 +189,21 @@ fun SlideshowScreen(
     // the video ends, not the interval timer).
     // Exception: if the video is manually paused, the timer takes over.
     var progress by remember { mutableStateOf(0f) }
-    // false = image still decoding; true = video or image ready.
-    // Reset to false on every index change so the timer waits for decode.
-    var imageReady by remember { mutableStateOf(false) }
-    LaunchedEffect(state.currentIndex) {
+    // Track readiness by asset ID, not as a standalone Boolean. During an
+    // AnimatedContent crossfade, Coil can report success for the outgoing
+    // asset after the index has already advanced. A Boolean would then mark
+    // the new asset ready and could suppress its timeout watchdog.
+    val currentAsset = state.assets.getOrNull(state.currentIndex)
+    val currentAssetId = currentAsset?.id
+    var imageReadyAssetId by remember { mutableStateOf<String?>(null) }
+    val imageReady = imageReadyAssetId == currentAssetId && currentAssetId != null
+    LaunchedEffect(currentAssetId) {
         // Videos are immediately "ready" — ExoPlayer handles its own timeline.
-        imageReady = state.assets.getOrNull(state.currentIndex)?.type == AssetType.VIDEO
+        imageReadyAssetId = if (currentAsset?.type == AssetType.VIDEO) currentAssetId else null
     }
-    LaunchedEffect(state.currentIndex, isPaused, isVideoPaused, s.intervalSeconds, imageReady, isScreenActive) {
+    LaunchedEffect(currentAssetId, isPaused, isVideoPaused, s.intervalSeconds, imageReady, isScreenActive) {
         progress = 0f
-        if (!isPaused && isScreenActive && imageReady && state.assets.isNotEmpty()) {
-            val currentAsset = state.assets[state.currentIndex]
+        if (!isPaused && isScreenActive && imageReady && currentAsset != null) {
             if (currentAsset.type == AssetType.VIDEO && !isVideoPaused) {
                 // Video playing normally — VideoPlayer calls viewModel.next() on end
                 return@LaunchedEffect
@@ -208,13 +224,13 @@ fun SlideshowScreen(
     // local preview or a request that never finishes used to leave imageReady
     // false forever, freezing an unattended frame on one photo. Give a stalled
     // request a generous 20 seconds, then move on.
-    LaunchedEffect(state.currentIndex, imageReady, isPaused, isScreenActive) {
-        if (imageReady || isPaused || !isScreenActive || state.assets.isEmpty()) {
+    LaunchedEffect(currentAssetId, imageReady, isPaused, isScreenActive) {
+        if (currentAssetId == null || imageReady || isPaused || !isScreenActive) {
             return@LaunchedEffect
         }
-        val assetId = state.assets[state.currentIndex].id
+        val assetId = currentAssetId
         delay(20_000L)
-        if (!imageReady && !isPaused && isScreenActive) {
+        if (imageReadyAssetId != assetId && !isPaused && isScreenActive && viewModel.isCurrent(assetId)) {
             android.util.Log.w("Slideshow", "Image load timed out; skipping asset=$assetId")
             viewModel.nextIfCurrent(assetId)
         }
@@ -337,6 +353,8 @@ fun SlideshowScreen(
         completedSteps = completedSteps,
         onStepCompleted = viewModel::markStepCompleted,
         onSkipped = { },
+        enabled = !suppressOnboarding,
+        stepEnabled = tourStepEnabled,
         tourState = tourState,
     ) {
         Surface(color = Color.Black) {
@@ -390,7 +408,11 @@ fun SlideshowScreen(
                                     photoAnimations = s.photoAnimations,
                                     enabledAnims = s.enabledAnimations,
                                     durationMs = s.intervalSeconds * 1000L,
-                                    onImageLoaded = { imageReady = true },
+                                    onImageLoaded = {
+                                        if (viewModel.isCurrent(assetId)) {
+                                            imageReadyAssetId = assetId
+                                        }
+                                    },
                                     onImageLoadFailed = {
                                         android.util.Log.w("Slideshow", "Image load failed; skipping asset=$assetId")
                                         viewModel.nextIfCurrent(assetId)
@@ -511,7 +533,7 @@ fun SlideshowScreen(
 
                 // Left/right nav
                 AnimatedVisibility(
-                    visible = controlsVisible,
+                    visible = controlsVisible && s.showNavigationControls,
                     enter = fadeIn(),
                     exit = fadeOut(),
                     modifier = Modifier.align(Alignment.CenterStart),
@@ -521,7 +543,7 @@ fun SlideshowScreen(
                     }
                 }
                 AnimatedVisibility(
-                    visible = controlsVisible,
+                    visible = controlsVisible && s.showNavigationControls,
                     enter = fadeIn(),
                     exit = fadeOut(),
                     modifier = Modifier.align(Alignment.CenterEnd),
@@ -536,7 +558,7 @@ fun SlideshowScreen(
 
                 // Pause/play + mute (bottom-center)
                 AnimatedVisibility(
-                    visible = controlsVisible,
+                    visible = controlsVisible && s.showPlaybackControls,
                     enter = fadeIn(),
                     exit = fadeOut(),
                     modifier = Modifier.align(Alignment.BottomCenter),

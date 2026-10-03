@@ -145,6 +145,24 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-10-03** — Release signing and version management. Production APKs
+  are built locally on Windows with the owner-managed release keystore. The
+  keystore and passwords are not stored in Git, GitHub Actions secrets, or
+  persistent environment variables; PowerShell prompts for them for each
+  release build and clears the temporary process environment afterward.
+  `versionName`, Git tag/Release, and ManageEngine version label use the same
+  SemVer value, while an explicit monotonically increasing `versionCode`
+  controls Android upgrades. Updated: `docs/ci-cd.md` and the family project
+  release runbook.
+
+- **2026-10-03** — Default launcher startup. Selecting Immich Photo Display as
+  the Android default Home launcher can relaunch the app with
+  `ACTION_MAIN` + `CATEGORY_HOME`. That operational launch must not repeatedly
+  start the initial coachmark tour; suppress the tour only on the initial
+  destination and keep normal navigation plus manual replay available.
+  Updated: `MainActivity`, navigation, onboarding behavior, and user-facing
+  documentation.
+
 - **2026-08-27** — Slideshow count loading. Returning from Settings must not
   flash a zero-photo count while Room cache observation is establishing its
   first usable snapshot. Omit the count until assets are available; do not

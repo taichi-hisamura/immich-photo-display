@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">عرض الصور فقط</string>
     <string name="muted">كتم الصوت</string>
     <string name="muted_desc">كتم صوت مقاطع الفيديو</string>
+    <string name="show_playback_controls">إظهار عناصر التحكم بالتشغيل</string>
+    <string name="show_playback_controls_desc">إظهار زري الإيقاف المؤقت/التشغيل وكتم الصوت</string>
+    <string name="show_navigation_controls">إظهار عناصر التنقل</string>
+    <string name="show_navigation_controls_desc">إظهار زري الصورة السابقة والتالية</string>
     <string name="photo_animations">رسوم متحركة للصور</string>
     <string name="photo_animations_desc">تأثيرات دقيقة للتقريب والتحريك على الصور</string>
     <string name="photo_animations_hint">يتم اختيار تأثير عشوائي من الأنواع الممكّنة لكل صورة</string>

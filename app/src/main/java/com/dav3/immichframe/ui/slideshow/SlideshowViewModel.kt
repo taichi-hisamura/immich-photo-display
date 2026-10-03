@@ -296,6 +296,9 @@ constructor(
         }
     }
 
+    /** Returns whether an asynchronous image callback still belongs to the visible asset. */
+    fun isCurrent(assetId: String): Boolean = _uiState.value.assets.getOrNull(_uiState.value.currentIndex)?.id == assetId
+
     fun previous() {
         val s = _uiState.value
         if (!s.isShowingFallback && s.assets.isNotEmpty()) {

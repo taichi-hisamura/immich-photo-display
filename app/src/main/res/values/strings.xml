@@ -26,6 +26,10 @@
     <string name="low_bandwidth_images_only_desc">Always enabled in the low-bandwidth build; videos are never downloaded or displayed</string>
     <string name="muted">Muted</string>
     <string name="muted_desc">Silence video audio</string>
+    <string name="show_playback_controls">Show Playback Controls</string>
+    <string name="show_playback_controls_desc">Show pause/play and mute buttons when controls are visible</string>
+    <string name="show_navigation_controls">Show Navigation Controls</string>
+    <string name="show_navigation_controls_desc">Show previous and next photo buttons when controls are visible</string>
     <string name="photo_animations">Photo Animations</string>
     <string name="photo_animations_desc">Subtle zoom and pan effects on photos (also reduces OLED burn-in)</string>
     <string name="photo_animations_hint">A random effect is picked from the enabled types for each photo</string>

@@ -1,5 +1,6 @@
 package com.dav3.immichframe
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
@@ -45,6 +46,16 @@ class MainActivity : FragmentActivity() {
                 val settingsVm: SettingsViewModel = hiltViewModel()
                 val settingsState by settingsVm.uiState.collectAsState()
                 val s = settingsState.settings
+                // A HOME intent is delivered when the app is launched as the
+                // selected default launcher. This is an operational launch,
+                // not a deliberate visit to a screen, so do not start the
+                // coachmark tour on the initial destination. Navigating to
+                // another screen still permits the normal tour and its
+                // manual replay action.
+                val suppressInitialOnboarding = remember {
+                    intent?.action == Intent.ACTION_MAIN &&
+                        intent?.categories?.contains(Intent.CATEGORY_HOME) == true
+                }
 
                 // Keep every in-app screen (including Settings) in the same
                 // immersive presentation as the slideshow. System bars remain
@@ -111,7 +122,7 @@ class MainActivity : FragmentActivity() {
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                 }
 
-                ImmichNavHost()
+                ImmichNavHost(suppressInitialOnboarding = suppressInitialOnboarding)
 
                 // Update check on startup (non-blocking, background download)
                 androidx.compose.runtime.LaunchedEffect(Unit) {

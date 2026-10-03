@@ -168,6 +168,8 @@ in-app administration does not leave system bars visible.
 
 - Previous/Next arrows on left/right edges.
 - Pause/Play button at bottom center.
+- Settings can hide the bottom playback controls (pause/play and mute) and the
+  left/right navigation controls independently. Both are shown by default.
 - Album name top-left, Settings + Close top-right.
 - **Update status icon** (left of Settings): hidden when idle; spinner while
   checking, circular progress ring with percentage while downloading (tap →
@@ -200,6 +202,8 @@ and display settings remain available without a PIN.
 │  Shuffle                [●]  │ ← toggle
 │  Skip Videos            [●]  │ ← locked ON (low-bandwidth profile)
 │  Muted                  [●]  │ ← retained; no effect in image-only mode
+│  Playback Controls      [●]  │ ← pause/play + mute buttons
+│  Navigation Controls    [●]  │ ← previous/next photo buttons
 │  Photo Animations       [○]  │ ← toggle (expandable)
 │  ┌─ Zoom In          [●]  ┐  │ ← shown when animations on
 │  │  Zoom Out         [○]  │  │

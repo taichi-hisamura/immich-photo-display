@@ -24,6 +24,10 @@
     <string name="skip_videos_desc">Alleen foto\'s tonen</string>
     <string name="muted">Gedempt</string>
     <string name="muted_desc">Video-audio dempen</string>
+    <string name="show_playback_controls">Afspeelknoppen tonen</string>
+    <string name="show_playback_controls_desc">Pauzeer/afspeel- en dempknoppen tonen</string>
+    <string name="show_navigation_controls">Navigatieknoppen tonen</string>
+    <string name="show_navigation_controls_desc">Knoppen voor vorige en volgende foto tonen</string>
     <string name="photo_animations">Foto-animaties</string>
     <string name="photo_animations_desc">Subtiele zoom- en panningeffecten op foto\'s</string>
     <string name="photo_animations_hint">Voor elke foto wordt een willekeurig effect gekozen uit de ingeschakelde typen</string>

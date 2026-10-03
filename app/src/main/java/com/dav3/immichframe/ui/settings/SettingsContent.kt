@@ -65,6 +65,8 @@ fun SettingsContent(
     onToggleShuffle: () -> Unit,
     onToggleSkipVideos: () -> Unit,
     onToggleMuted: () -> Unit,
+    onToggleShowPlaybackControls: () -> Unit,
+    onToggleShowNavigationControls: () -> Unit,
     onTogglePhotoAnimations: () -> Unit,
     onToggleAnimation: (PhotoAnimation) -> Unit,
     onUpdateInterval: (Int) -> Unit,
@@ -99,7 +101,15 @@ fun SettingsContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        PlaybackSection(s, onUpdateInterval, onToggleShuffle, onToggleSkipVideos, onToggleMuted)
+        PlaybackSection(
+            s,
+            onUpdateInterval,
+            onToggleShuffle,
+            onToggleSkipVideos,
+            onToggleMuted,
+            onToggleShowPlaybackControls,
+            onToggleShowNavigationControls,
+        )
         HorizontalDivider()
         PhotoAnimationsSection(s, onTogglePhotoAnimations, onToggleAnimation)
         HorizontalDivider()
@@ -130,6 +140,8 @@ private fun PlaybackSection(
     onToggleShuffle: () -> Unit,
     onToggleSkipVideos: () -> Unit,
     onToggleMuted: () -> Unit,
+    onToggleShowPlaybackControls: () -> Unit,
+    onToggleShowNavigationControls: () -> Unit,
 ) {
     SectionHeaderPreview(stringResource(R.string.section_playback))
     Text("${stringResource(R.string.interval)}: ${s.intervalSeconds}s")
@@ -157,6 +169,18 @@ private fun PlaybackSection(
         subtitle = stringResource(R.string.muted_desc),
         checked = s.muted,
         onToggle = onToggleMuted,
+    )
+    SwitchItemPreview(
+        title = stringResource(R.string.show_playback_controls),
+        subtitle = stringResource(R.string.show_playback_controls_desc),
+        checked = s.showPlaybackControls,
+        onToggle = onToggleShowPlaybackControls,
+    )
+    SwitchItemPreview(
+        title = stringResource(R.string.show_navigation_controls),
+        subtitle = stringResource(R.string.show_navigation_controls_desc),
+        checked = s.showNavigationControls,
+        onToggle = onToggleShowNavigationControls,
     )
 }
 
@@ -633,6 +657,8 @@ private fun SettingsSectionPreview_Playback() {
                 onToggleShuffle = {},
                 onToggleSkipVideos = {},
                 onToggleMuted = {},
+                onToggleShowPlaybackControls = {},
+                onToggleShowNavigationControls = {},
             )
         }
     }
