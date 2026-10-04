@@ -106,7 +106,7 @@ immich-android/
 │   └── build.gradle.kts          # Includes roborazzi {} block for Compose Preview screenshot gen
 ├── docs/                        # This documentation
 │   └── screenshots/             # Generated screenshots (from recordRoborazziDebug)
-├── .github/workflows/           # dev-build.yml, prod-build.yml
+├── .github/workflows/           # dev-build.yml, pr-verify.yml
 ├── build.gradle.kts             # Root build file
 ├── settings.gradle.kts
 └── gradle/libs.versions.toml    # Version catalog

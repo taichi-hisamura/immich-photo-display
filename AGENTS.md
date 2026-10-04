@@ -157,6 +157,17 @@ Format:
   verified reboot recovery. Historical `launcher_mode` DataStore values are
   ignored after upgrade; they do not justify restoring the removed UI or code.
 
+- **2026-10-04** — Production signing and release builds are local-only. The
+  release keystore must never be committed, uploaded to GitHub Actions, or
+  represented by GitHub Actions Secrets; release signing passwords must never
+  be stored in GitHub Actions Secrets. GitHub Actions performs verification
+  only. `.github/workflows/prod-build.yml` was intentionally removed and must
+  not be recreated unless the owner explicitly changes this policy. Production
+  APKs use the existing owner-managed release key, and the exact same locally
+  signed APK is uploaded manually to GitHub Release and ManageEngine. Never
+  rebuild separate APKs for separate distribution channels. Changing signing
+  keys is not an acceptable migration path for installed devices.
+
 - **SUPERSEDED: 2026-10-04** — The former default-launcher implementation was
   superseded by the 2026-10-04 ManageEngine Single App Kiosk decision above.
   Do not reintroduce Home chooser, Home-role monitoring, or a launcher-loss
@@ -610,6 +621,9 @@ Format:
 - Hardcode the API key, server URL, or any user secret in code.
 - Use `git push --force` on `develop` or `main`.
 - Commit the release keystore (`release.jks`) or debug keystore.
+- Store production signing credentials in GitHub Actions or recreate the
+  removed `.github/workflows/prod-build.yml` without an explicit owner policy
+  change.
 - Add a setting to `Models.kt` without adding it to the repo, ViewModel, UI,
   AND docs in the same change.
 - Skip `spotlessApply` before committing (CI will fail on `spotlessCheck`).
