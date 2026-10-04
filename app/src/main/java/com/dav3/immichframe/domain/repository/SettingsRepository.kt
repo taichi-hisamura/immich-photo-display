@@ -17,6 +17,9 @@ interface SettingsRepository {
      */
     val fallbackAssetId: Flow<String?>
 
+    /** Asset that was most recently visible in the slideshow. */
+    val lastDisplayedAssetId: Flow<String?>
+
     /** Whether a six-digit in-app PIN protects the administration screens. */
     val adminPinConfigured: Flow<Boolean>
 
@@ -56,6 +59,8 @@ interface SettingsRepository {
     suspend fun setSlideshowSettings(settings: SlideshowSettings)
 
     suspend fun setFallbackAssetId(assetId: String?)
+
+    suspend fun setLastDisplayedAssetId(assetId: String?)
 
     /** Update only the transient state controlled by the display schedule receiver. */
     suspend fun setScreenScheduleSleeping(sleeping: Boolean)

@@ -314,6 +314,7 @@ Setup → Albums → Slideshow
 | Administration PIN verifier | EncryptedSharedPreferences | `admin_pin_salt`, `admin_pin_hash` | Salted PBKDF2-HMAC-SHA256 verifier (encrypted; PIN is not stored) |
 | Selected Album IDs | DataStore | `selected_album_ids` | String set |
 | Empty-album fallback photo | DataStore | `fallback_asset_id` | String asset ID; set only while all selected albums are confirmed empty |
+| Last displayed photo | DataStore | `last_displayed_asset_id` | String asset ID; used to restore slideshow position after navigation or process recreation |
 | Slideshow interval | DataStore | `interval_sec` | Int (5–120) |
 | Transition duration | DataStore | `transition_sec` | Float (0–3) |
 | Image fill mode | DataStore | `fill_mode` | String enum (CONTAIN/COVER) |

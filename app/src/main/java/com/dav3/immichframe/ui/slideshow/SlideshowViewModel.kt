@@ -65,6 +65,7 @@ constructor(
     /** Latest cache snapshot that excludes the currently painted photo. */
     private var pendingCachedAssets: List<Asset>? = null
     private var retainedDisplayAssetId: String? = null
+    private var lastPersistedAssetId: String? = null
 
     val settings =
         settingsRepo.slideshowSettings
@@ -101,6 +102,8 @@ constructor(
 
             val toggledIds = settingsRepo.mediaSelectionToggledIds.first()
             val newItemsShown = settingsRepo.mediaSelectionNewItemsShown.first()
+            val lastDisplayedAssetId = settingsRepo.lastDisplayedAssetId.first()
+            lastPersistedAssetId = lastDisplayedAssetId
 
             // First, try to load from cache (offline-capable fast path)
             val cachedAssets = mutableListOf<Asset>()
@@ -131,6 +134,7 @@ constructor(
                     isLoading = false,
                     isShowingFallback = true,
                 )
+                persistDisplayedAsset(displayFallback.id)
                 observeCachedAssets(albumIds, toggledIds, newItemsShown)
                 if (s.autoSync) syncScheduler.syncIfStale(albumIds)
                 return@launch
@@ -148,12 +152,15 @@ constructor(
                 val filteredAssets = applyMediaSelection(uniqueCachedAssets, toggledIds, newItemsShown)
                     .let { if (s.skipVideos) it.filter { it.type == AssetType.IMAGE } else it }
                 val ordered = if (s.shuffle) filteredAssets.shuffled() else filteredAssets
+                val restoredIndex = restoredAssetIndex(ordered, lastDisplayedAssetId)
                 _uiState.value = if (ordered.isNotEmpty()) {
-                    SlideshowUiState(assets = ordered, currentIndex = 0, isLoading = false)
+                    SlideshowUiState(assets = ordered, currentIndex = restoredIndex, isLoading = false)
                 } else {
                     SlideshowUiState(isLoading = false, error = "No images found in cache")
                 }
-                updateDisplayLease(ordered.firstOrNull()?.id)
+                val restoredAssetId = ordered.getOrNull(restoredIndex)?.id
+                updateDisplayLease(restoredAssetId)
+                persistDisplayedAsset(restoredAssetId)
 
                 // Kick off background sync via WorkManager (worker handles download + reconcile)
                 if (s.autoSync) {
@@ -189,10 +196,11 @@ constructor(
                     .let { if (s.skipVideos) it.filter { it.type == AssetType.IMAGE } else it }
                 android.util.Log.d("SlideshowLoad", "Network: ${uniqueAssets.count { it.type == AssetType.IMAGE }} images, ${uniqueAssets.count { it.type == AssetType.VIDEO }} videos, skipVideos=${s.skipVideos}")
                 val ordered = if (s.shuffle) filteredAssets.shuffled() else filteredAssets
+                val restoredIndex = restoredAssetIndex(ordered, lastDisplayedAssetId)
 
                 _uiState.value = when {
                     ordered.isNotEmpty() -> {
-                        SlideshowUiState(assets = ordered, currentIndex = 0, isLoading = false)
+                        SlideshowUiState(assets = ordered, currentIndex = restoredIndex, isLoading = false)
                     }
                     errors.isNotEmpty() -> {
                         SlideshowUiState(isLoading = false, error = "Asset load failed:\n${errors.joinToString("\n")}")
@@ -201,7 +209,9 @@ constructor(
                         SlideshowUiState(isLoading = false, error = "No images found")
                     }
                 }
-                updateDisplayLease(ordered.firstOrNull()?.id)
+                val restoredAssetId = ordered.getOrNull(restoredIndex)?.id
+                updateDisplayLease(restoredAssetId)
+                persistDisplayedAsset(restoredAssetId)
 
                 // Populate cache in background (worker downloads files + writes DB)
                 if (ordered.isNotEmpty()) {
@@ -291,6 +301,7 @@ constructor(
             val nextIndex = (s.currentIndex + 1) % s.assets.size
             _uiState.value = s.copy(currentIndex = nextIndex)
             updateDisplayLease(s.assets[nextIndex].id)
+            persistDisplayedAsset(s.assets[nextIndex].id)
         }
     }
 
@@ -313,6 +324,7 @@ constructor(
             val previousIndex = (s.currentIndex - 1 + s.assets.size) % s.assets.size
             _uiState.value = s.copy(currentIndex = previousIndex)
             updateDisplayLease(s.assets[previousIndex].id)
+            persistDisplayedAsset(s.assets[previousIndex].id)
         }
     }
 
@@ -330,6 +342,7 @@ constructor(
             resolveLocalPaths(ordered)
             _uiState.value = SlideshowUiState(assets = ordered, currentIndex = 0, isLoading = false)
             updateDisplayLease(nextAsset.id)
+            persistDisplayedAsset(nextAsset.id)
         }
     }
 
@@ -345,6 +358,12 @@ constructor(
         previousAssetId?.let { assetId ->
             viewModelScope.launch { cacheRepo.releaseRetainedAsset(assetId) }
         }
+    }
+
+    private fun persistDisplayedAsset(assetId: String?) {
+        if (assetId == null || assetId == lastPersistedAssetId) return
+        lastPersistedAssetId = assetId
+        viewModelScope.launch { settingsRepo.setLastDisplayedAssetId(assetId) }
     }
 
     fun setClockPosition(pos: ClockPosition) {
@@ -399,6 +418,11 @@ internal fun fallbackForDisplay(
     cachedAssets: List<Asset>,
     fallbackAsset: Asset?,
 ): Asset? = fallbackAsset?.takeIf { cachedAssets.isEmpty() }
+
+internal fun restoredAssetIndex(
+    assets: List<Asset>,
+    lastDisplayedAssetId: String?,
+): Int = assets.indexOfFirst { it.id == lastDisplayedAssetId }.takeIf { it >= 0 } ?: 0
 
 /**
  * Returns true if the exception indicates the album no longer exists on the
