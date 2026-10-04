@@ -40,8 +40,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Photo animations (Ken Burns: zoom in/out, pan left/right/up/down, or random) — also serves as burn-in protection
 - Adaptive background (fills letterbox bars with each photo's edge colors as a gradient)
 - Shuffle mode for randomized image order
-- Progress bar showing time remaining per image, with playback restored after
-  Home or Settings foreground returns
+- Progress bar showing time remaining per image, with the visible photo and
+  playback restored after Home or Settings foreground returns
 - Optional slideshow controls — hide playback buttons and navigation arrows for
   unattended or touch-sensitive frames
 - Failed or unresponsive image loads are skipped automatically so the frame

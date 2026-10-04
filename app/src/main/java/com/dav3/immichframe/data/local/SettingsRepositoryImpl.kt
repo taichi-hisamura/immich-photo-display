@@ -91,6 +91,7 @@ constructor(
         val PERMISSION_STATUS = stringPreferencesKey("permission_status")
         val ONBOARDING_COMPLETED_STEPS = stringSetPreferencesKey("onboarding_completed_steps")
         val FALLBACK_ASSET_ID = stringPreferencesKey("fallback_asset_id")
+        val LAST_DISPLAYED_ASSET_ID = stringPreferencesKey("last_displayed_asset_id")
     }
 
     private val masterKey by lazy {
@@ -133,6 +134,9 @@ constructor(
 
     override val fallbackAssetId: Flow<String?> =
         context.appDataStore.data.map { it[Keys.FALLBACK_ASSET_ID] }
+
+    override val lastDisplayedAssetId: Flow<String?> =
+        context.appDataStore.data.map { it[Keys.LAST_DISPLAYED_ASSET_ID] }
 
     override val slideshowSettings: Flow<SlideshowSettings> =
         context.appDataStore.data.map { prefs ->
@@ -287,6 +291,16 @@ constructor(
                 prefs.remove(Keys.FALLBACK_ASSET_ID)
             } else {
                 prefs[Keys.FALLBACK_ASSET_ID] = assetId
+            }
+        }
+    }
+
+    override suspend fun setLastDisplayedAssetId(assetId: String?) {
+        context.appDataStore.edit { prefs ->
+            if (assetId == null) {
+                prefs.remove(Keys.LAST_DISPLAYED_ASSET_ID)
+            } else {
+                prefs[Keys.LAST_DISPLAYED_ASSET_ID] = assetId
             }
         }
     }

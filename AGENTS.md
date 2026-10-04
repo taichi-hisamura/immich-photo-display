@@ -145,6 +145,14 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-10-04** — Slideshow position persistence. Returning from runtime
+  Settings or Android Home must restore the previously visible asset even when
+  navigation or process recreation constructs a new `SlideshowViewModel`.
+  Persist the asset ID rather than the list index so Shuffle can rebuild its
+  order safely; fall back to the first available asset only when the saved
+  asset no longer exists. Updated: slideshow persistence, tests, functional
+  and technical documentation, and README.
+
 - **2026-10-03** — Foreground slideshow continuity and independent permission
   probes. Returning from runtime Settings or Android Home must preserve the
   current slideshow, restart progress/control-hide effects, and prefer normal

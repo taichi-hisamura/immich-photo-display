@@ -118,9 +118,12 @@ action that saves the selected albums.
     the app logs the asset ID and automatically skips to the next photo. A
     late callback from an older transition cannot mark the newly visible photo
     ready or skip it.
-15. Returning from Android Home or from runtime Settings preserves the current
-    slideshow instance and current photo. Playback, progress, and the 5-second
-    control auto-hide timer restart on every foreground return.
+15. The ID of the visible photo is persisted whenever the slideshow advances.
+    Returning from Android Home or runtime Settings, including when navigation
+    or process recreation builds a new slideshow instance, restores that photo
+    from the newly loaded list. This also applies when Shuffle is enabled. If
+    the photo is no longer available, playback starts from the first available
+    photo. Progress and the 5-second control auto-hide timer restart on return.
 
 **Offline / album lifecycle:**
 - **Server unreachable**: the slideshow continues displaying cached media
