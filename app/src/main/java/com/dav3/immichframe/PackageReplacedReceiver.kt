@@ -7,7 +7,6 @@ import android.provider.Settings
 import android.util.Log
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import com.dav3.immichframe.domain.system.DisplayScheduleManager
-import com.dav3.immichframe.domain.system.isDefaultLauncher
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,23 +38,17 @@ class PackageReplacedReceiver : BroadcastReceiver() {
                 if (!shouldResumeAfterPackageReplace(configured, sleeping)) return@launch
 
                 val hasOverlayPermission = Settings.canDrawOverlays(context)
-                val defaultLauncher = isDefaultLauncher(context)
-                if (!canLaunchFrameFromBackground(hasOverlayPermission, defaultLauncher)) {
+                if (!canLaunchFrameFromBackground(hasOverlayPermission)) {
                     Log.w(
                         TAG,
                         "Package updated, but background launch is unavailable; " +
-                            "grant display-over-other-apps or use the app as the default launcher",
+                            "grant display-over-other-apps",
                     )
                     return@launch
                 }
 
                 displayScheduleManager.wakeScreenNow()
-                val launchIntent =
-                    if (defaultLauncher) {
-                        Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-                    } else {
-                        context.packageManager.getLaunchIntentForPackage(context.packageName)
-                    }
+                val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 launchIntent?.addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -77,4 +70,4 @@ class PackageReplacedReceiver : BroadcastReceiver() {
 
 internal fun shouldResumeAfterPackageReplace(configured: Boolean, scheduledSleeping: Boolean): Boolean = configured && !scheduledSleeping
 
-internal fun canLaunchFrameFromBackground(hasOverlayPermission: Boolean, isDefaultLauncher: Boolean): Boolean = hasOverlayPermission || isDefaultLauncher
+internal fun canLaunchFrameFromBackground(hasOverlayPermission: Boolean): Boolean = hasOverlayPermission

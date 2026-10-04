@@ -1,24 +1,13 @@
 package com.dav3.immichframe.domain.system
 
-import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import com.dav3.immichframe.BuildConfig
 import android.provider.Settings as AndroidSettings
 
-/**
- * Manages launcher-mode (Home replacement) for the app.
- *
- * When enabled, the app declares itself as a Home launcher via an
- * [activity-alias][android.content.pm.ActivityInfo] in the manifest. The
- * system then always launches the app on boot and when the Home button is
- * pressed — no BOOT_COMPLETED broadcast or autostart permission required.
- * This is the most reliable boot method on Chinese OEM ROMs (OPPO/Realme/
- * Xiaomi/etc.) that silently block boot broadcasts.
- */
+/** Compatibility helpers for the legacy launcher-mode preference and actions. */
 private const val NAMESPACE = "com.dav3.immichframe"
 
 private val launcherAliasComponent =
@@ -57,29 +46,6 @@ internal fun isLauncherModeEnabled(context: Context): Boolean {
     return state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
         state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
 }
-
-/** Returns true if this app is currently set as the system's default Home. */
-internal fun isDefaultLauncher(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val roleManager = context.getSystemService(RoleManager::class.java)
-        val isHomeRoleAvailable = roleManager?.isRoleAvailable(RoleManager.ROLE_HOME) == true
-        if (isHomeRoleAvailable) {
-            return isHomeRoleHeld(
-                roleAvailable = true,
-                roleHeld = roleManager?.isRoleHeld(RoleManager.ROLE_HOME) == true,
-            )
-        }
-    }
-
-    // Pre-Android 10 fallback. Android 10 and above use RoleManager because
-    // resolveActivity(MATCH_DEFAULT_ONLY) can return ResolverActivity even
-    // when a persistent Home selection exists.
-    val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-    val defaultLauncher = context.packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
-    return defaultLauncher?.activityInfo?.packageName == context.packageName
-}
-
-internal fun isHomeRoleHeld(roleAvailable: Boolean, roleHeld: Boolean): Boolean = roleAvailable && roleHeld
 
 /**
  * Opens the system Home / launcher settings screen

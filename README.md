@@ -47,7 +47,8 @@ lets you pick which album(s) to display, and remembers your choice.
 - Failed or unresponsive image loads are skipped automatically so the frame
   does not stop on one photo
 - Start on boot (with SYSTEM_ALERT_WINDOW permission for Android 10+ BAL exemption, plus OEM autostart permission detection)
-- Launcher mode (Home replacement) — the most reliable boot method for dedicated photo frames; bypasses BOOT_COMPLETED entirely
+- Legacy launcher-mode preferences are retained for upgrades, but the app is not
+  registered as an Android Home app; ManageEngine owns kiosk startup and resume
 - Automatic post-update recovery — a configured frame restores its display schedule, wakes the panel, and resumes the slideshow after an in-place APK update
 - Fork self-update disabled until a fork-owned signed release channel exists
 - Preview-only offline cache with a six-hour default background sync and a
@@ -55,7 +56,7 @@ lets you pick which album(s) to display, and remembers your choice.
 - Display Sleep Schedule — recommended: turns the display off after the device timeout and wakes it silently at configured daily times; on Android 12+ it guides the user to grant Alarms & reminders for on-time transitions
 - Night Mode — fallback: keeps photos visible while dimming the screen during set hours when display sleep is not reliable
 - Auto-resumes last album on launch
-- Interactive onboarding tour with coachmark overlays — guides users through setup, album selection, slideshow controls (including back-to-albums and update indicator), and settings; replayable per-screen ("Show Tour Again") or globally ("Reset All Tours"). The tour does not auto-start when the app is launched by the Android Home launcher.
+- Interactive onboarding tour with coachmark overlays — guides users through setup, album selection, slideshow controls (including back-to-albums and update indicator), and settings; replayable per-screen ("Show Tour Again") or globally ("Reset All Tours").
 - Adaptive launcher icon with day/night variants and Android 13+ monochrome (themed icon) support; dedicated debug-build variant (amber background); separate background-free logo drawable for the Setup screen
 - Localized into 13 languages (en, ar, zh, nl, fr, de, it, ja, ko, pl, pt, ru, es)
 - **In-app API key generation** — log in with email/password or OAuth; the app auto-creates a scoped key (no external scripts needed)

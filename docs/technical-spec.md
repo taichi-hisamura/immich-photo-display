@@ -186,19 +186,18 @@ probe uses that asset ID, falling back to an album thumbnail ID when the search
 is empty. Only HTTP 403 means denied; other HTTP and network failures remain
 unknown rather than becoming false grants or preventing later probes.
 
-On Android 10 and later, launcher mode uses `RoleManager.ROLE_HOME` to
-determine whether this app holds the Home role. This avoids false launcher-loss
-warnings where a generic intent resolution returns the system resolver despite
-a persistent Home selection.
+This build does not request or inspect `RoleManager.ROLE_HOME`. The Android Home
+role remains owned by the system launcher or ManageEngine's kiosk controller;
+the app is started as a regular `MAIN` + `LAUNCHER` application.
 
 After an in-place APK update, Android sends the system-protected
 `ACTION_MY_PACKAGE_REPLACED` broadcast to `PackageReplacedReceiver`. The
 receiver re-applies the display schedule, verifies that server credentials and
 at least one album are configured, and leaves an intentional schedule sleep
 undisturbed. Otherwise it briefly acquires a screen wake lock and launches the
-frame when either `SYSTEM_ALERT_WINDOW` is granted or the app still holds the
-Home role. App-private DataStore, encrypted preferences, Room data, and cached
-preview files are not cleared by an in-place update.
+frame when `SYSTEM_ALERT_WINDOW` is granted. App-private DataStore, encrypted
+preferences, Room data, and cached preview files are not cleared by an in-place
+update.
 
 ## Media Cache (Room + WorkManager)
 
@@ -333,7 +332,7 @@ Setup → Albums → Slideshow
 | Show playback controls | DataStore | `show_playback_controls` | String bool (default true) |
 | Show navigation controls | DataStore | `show_navigation_controls` | String bool (default true) |
 | Start on boot | DataStore | `start_on_boot` | String bool |
-| Launcher mode | DataStore | `launcher_mode` | String bool (enables the Home activity-alias) |
+| Launcher mode | DataStore | `launcher_mode` | String bool (legacy compatibility preference; does not register Home) |
 | Boot verified | DataStore | `boot_verified` | String bool (self-test: BootReceiver sets true on successful fire) |
 | Auto-update | DataStore | `auto_update` | Forced `false` in this fork |
 | Adaptive background | DataStore | `adaptive_background` | String bool |
@@ -366,11 +365,10 @@ Setup → Albums → Slideshow
 > It retains Immich metadata for diagnostics; all image types still use the
 > static preview endpoint.
 
-When `MainActivity` receives `ACTION_MAIN` with `CATEGORY_HOME`, it treats the
-launch as an Android default-launcher startup and passes a one-time tour
-suppression to the initial navigation destination. The suppression is not
-persisted and is not applied after navigating to another screen, so the
-existing per-screen completion state and manual replay actions remain intact.
+For compatibility with older task launches, `MainActivity` still recognizes an
+explicit `ACTION_MAIN` with `CATEGORY_HOME` and can suppress the initial tour for
+that launch. The current manifest does not declare a `HOME` intent-filter, so
+this path does not make the app an Android Home candidate.
 
 All settings flow through a single shared DataStore instance
 (`DataStoreProvider.kt`) — there must be only one DataStore active per file

@@ -145,6 +145,13 @@ Format:
 
 <!-- Append new clarifications below this line. -->
 
+- **2026-10-04** — ManageEngine Single App Kiosk owns Android Home and kiosk
+  resume for the deployed frame. The app must not register an `activity-alias`
+  with `HOME`, inspect or require the Home role, or prompt the user to select
+  Immich Photo Display as the default Home. Keep the normal `MAIN` + `LAUNCHER`
+  entry so MDM can start the app as a regular application. Legacy launcher-mode
+  preferences may remain only for upgrade compatibility.
+
 - **2026-10-04** — Slideshow position persistence. Returning from runtime
   Settings or Android Home must restore the previously visible asset even when
   navigation or process recreation constructs a new `SlideshowViewModel`.

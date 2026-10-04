@@ -43,11 +43,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Launcher mode: when enabled via PackageManager, the system sees
-             this alias as a Home replacement and always launches it on boot.
-             This bypasses BOOT_COMPLETED entirely — the most reliable autostart
-             method, especially on Chinese OEM ROMs (OPPO/Realme/Xiaomi/etc.)
-             that silently block boot broadcasts. -->
+        <!-- Retained as a normal alias for backwards-compatible launcher-mode
+             preferences; it is not registered as an Android Home activity. -->
         <activity-alias
             android:name=".LauncherAlias"
             android:targetActivity=".MainActivity"
@@ -56,7 +53,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>

@@ -233,7 +233,7 @@ and display settings remain available without a PIN.
 │  [●─────────────────────]    │ ← slider 0-100%
 │                              │
 │  Start on Boot          [○]  │ ← toggle (+ overlay & OEM autostart prompts)
-│  Launcher Mode          [○]  │ ← toggle (+ Open Launcher Settings button)
+│  Launcher Mode          [○]  │ ← legacy compatibility toggle
 │  Auto-Update            [○]  │ ← disabled until fork release channel exists
 │                              │
 │  MEDIA CACHE                 │
@@ -352,14 +352,9 @@ appears:
 - Start on Boot also shows an "Open Autostart Settings" button when enabled,
   which deep-links to the OEM-specific autostart permission screen
   (Xiaomi, Oppo, Vivo, Huawei, Honor, Asus, etc.).
-- Launcher Mode, when enabled, shows an "Open Launcher Settings" button that
-  opens the system Home settings page (`ACTION_HOME_SETTINGS`), allowing
-  the user to switch to another launcher or re-select this app. The same
-  action is available in the slideshow hover UI (apps icon in the top bar)
-  when launcher mode is active.
-- If the app loses its default-launcher status while Launcher Mode is
-  enabled, a dialog appears on resume prompting the user to re-select
-  Immich Photo Display as the default Home.
+- Launcher Mode is retained as a legacy compatibility toggle, but it does not
+  register the app as an Android Home candidate. ManageEngine owns the Home and
+  Single App Kiosk behavior; no launcher-loss dialog is shown on resume.
 - Auto-Update, when visible, shows a "Check Now" button below it that
   triggers an immediate update check regardless of the toggle state. While
   active, the button label reflects state: "Checking for updates…",
