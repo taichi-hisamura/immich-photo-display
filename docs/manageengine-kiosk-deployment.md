@@ -22,7 +22,8 @@ This runbook records the validated pilot boundary for:
 - Lenovo Tab M10 FHD Plus
 - Android 10
 - ManageEngine Endpoint Central Cloud
-- Immich Photo Display v0.6.5 or later
+- Immich Photo Display v0.6.6 for the release covered by this change; the
+  physical pilot evidence in this runbook was collected with v0.6.5
 - Tailscale
 - A self-hosted Immich server
 
@@ -51,38 +52,57 @@ The pilot reproduced a failure with ManageEngine MDM Self Service 26.08.02 and
 Tailscale 1.98.8: after a managed app configuration push, Android Always-on VPN
 was turned off and Tailscale remained disconnected without self-recovery.
 
-ManageEngine Android MDM Agent 26.09.01 release notes identify the corresponding
-fix: “Always-On VPN configuration was removed when app configurations were pushed
-to the device”. Use Self Service 26.09.01 or later before treating a managed
-configuration push as a stable baseline.
+The [ManageEngine Android MDM Agent release notes](https://www.manageengine.com/mobile-device-management/mdm-android-agent-release-notes.html)
+for Self Service 26.09.01, released 2026-09-18, list this issue fix:
+“Always-On VPN configuration was removed when app configurations were pushed to
+the device”. The pilot symptom matched this documented issue, and the observed
+fix after updating to 26.09.01 was consistent with the release note. This is a
+correlation between the device reproduction and the official fix description,
+not a claim that the release note independently identifies this device.
+Use Self Service 26.09.01 or later before treating a managed configuration push
+as a stable baseline.
 
 ## Pilot validation
 
 The following sequence passed on the physical pilot device using the v0.6.5
-release APK:
+release APK. The application version in this change is v0.6.6; the sequence
+below records the v0.6.5 pilot evidence and is not a claim that the pilot was
+performed with v0.6.6.
 
-1. Push the Tailscale Managed App Configuration.
-2. Reapply the VPN profile and establish the baseline with Always-on VPN ON.
-3. Confirm Tailscale is Connected for more than ten minutes.
-4. Pause and Resume Single App Kiosk, then confirm Always-on VPN remains ON.
-5. Restart the device from ManageEngine.
-6. Confirm, without local user interaction:
-   - ManageEngine returns.
-   - Tailscale connects.
-   - Android Always-on VPN remains ON.
-   - Single App Kiosk returns.
-   - Immich Photo Display v0.6.5 starts.
-   - The slideshow is visible.
-   - Immich synchronization succeeds.
+1. Update ManageEngine MDM Self Service to 26.09.01 or later.
+2. Reapply the VPN profile.
+3. Confirm Android Always-on VPN is ON.
+4. Confirm Tailscale is Connected.
+5. Confirm ManageEngine communication is healthy.
+6. Maintain this healthy baseline for several minutes.
+7. Return the kiosk to its normal operating state.
+8. Distribute the Tailscale Managed App Configuration.
+9. Confirm Tailscale remains Connected for more than ten minutes.
+10. Pause Single App Kiosk.
+11. Confirm Android Always-on VPN remains ON.
+12. Resume Single App Kiosk.
+13. Confirm that no Home chooser or launcher-mode dialog appears.
+14. Restart the device from ManageEngine.
+15. Confirm, without local user interaction:
+    - ManageEngine returns.
+    - Tailscale is Connected.
+    - Android Always-on VPN is ON.
+    - Single App Kiosk returns.
+    - Immich Photo Display starts.
+    - The slideshow is visible.
+    - Immich synchronization succeeds.
 
 ## Validation matrix
 
 | Test | Result |
 | --- | --- |
-| Kiosk Pause → Resume | PASS |
-| Home chooser appears during resume | NO |
-| Always-on VPN retained after managed configuration push | PASS |
-| Tailscale reconnect after reboot | PASS |
+| Self Service 26.09.01+ baseline established | PASS |
+| Managed App Configuration distributed after baseline | PASS |
+| Tailscale Connected for more than ten minutes after distribution | PASS |
+| Kiosk Pause → Always-on VPN remains ON | PASS |
+| Kiosk Resume → no Home chooser or launcher dialog | PASS |
+| Tailscale Connected after reboot | PASS |
+| Always-on VPN ON after reboot | PASS |
 | Reboot → ManageEngine / Kiosk recovery | PASS |
 | Reboot → slideshow | PASS |
 | Immich sync after reboot | PASS |
