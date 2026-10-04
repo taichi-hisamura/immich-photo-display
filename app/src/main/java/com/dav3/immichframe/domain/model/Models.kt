@@ -55,7 +55,6 @@ data class SlideshowSettings(
     val showPlaybackControls: Boolean = true,
     val showNavigationControls: Boolean = true,
     val startOnBoot: Boolean = false,
-    val launcherMode: Boolean = false,
     val bootVerified: Boolean = false,
     val autoUpdate: Boolean = false,
     val clockSnapToGrid: Boolean = true,

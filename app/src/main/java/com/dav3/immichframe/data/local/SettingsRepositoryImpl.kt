@@ -62,7 +62,6 @@ constructor(
         val SHOW_PLAYBACK_CONTROLS = stringPreferencesKey("show_playback_controls")
         val SHOW_NAVIGATION_CONTROLS = stringPreferencesKey("show_navigation_controls")
         val START_ON_BOOT = stringPreferencesKey("start_on_boot")
-        val LAUNCHER_MODE = stringPreferencesKey("launcher_mode")
         val BOOT_VERIFIED = stringPreferencesKey("boot_verified")
         val AUTO_UPDATE = stringPreferencesKey("auto_update")
         val CLOCK_SNAP_TO_GRID = stringPreferencesKey("clock_snap_to_grid")
@@ -160,7 +159,6 @@ constructor(
                 showPlaybackControls = prefs[Keys.SHOW_PLAYBACK_CONTROLS]?.toBoolean() ?: true,
                 showNavigationControls = prefs[Keys.SHOW_NAVIGATION_CONTROLS]?.toBoolean() ?: true,
                 startOnBoot = prefs[Keys.START_ON_BOOT]?.toBoolean() ?: false,
-                launcherMode = prefs[Keys.LAUNCHER_MODE]?.toBoolean() ?: false,
                 bootVerified = prefs[Keys.BOOT_VERIFIED]?.toBoolean() ?: false,
                 autoUpdate = false,
                 clockSnapToGrid = prefs[Keys.CLOCK_SNAP_TO_GRID]?.toBoolean() ?: true,
@@ -260,7 +258,6 @@ constructor(
             it[Keys.SHOW_PLAYBACK_CONTROLS] = settings.showPlaybackControls.toString()
             it[Keys.SHOW_NAVIGATION_CONTROLS] = settings.showNavigationControls.toString()
             it[Keys.START_ON_BOOT] = settings.startOnBoot.toString()
-            it[Keys.LAUNCHER_MODE] = settings.launcherMode.toString()
             it[Keys.BOOT_VERIFIED] = settings.bootVerified.toString()
             it[Keys.AUTO_UPDATE] = false.toString()
             it[Keys.CLOCK_SNAP_TO_GRID] = settings.clockSnapToGrid.toString()

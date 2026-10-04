@@ -84,7 +84,6 @@ import com.dav3.immichframe.domain.system.hasOverlayPermission
 import com.dav3.immichframe.domain.system.needsBootPermission
 import com.dav3.immichframe.domain.system.openBootPermissionSettings
 import com.dav3.immichframe.domain.system.openExactAlarmSettings
-import com.dav3.immichframe.domain.system.openLauncherSettings
 import com.dav3.immichframe.domain.system.openOverlayPermissionSettings
 import com.dav3.immichframe.ui.components.AdminPinPrompt
 import com.dav3.immichframe.ui.components.AdminPinSetupDialog
@@ -597,27 +596,6 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(stringResource(R.string.open_autostart), style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-
-                // ---- Launcher Mode (most reliable boot method) ----
-                // Only visible when Start on Boot is enabled — launcher mode is a
-                // complement to it for devices where BOOT_COMPLETED is unreliable.
-                if (s.startOnBoot) {
-                    SwitchItem(
-                        title = stringResource(R.string.launcher_mode),
-                        subtitle = stringResource(R.string.launcher_mode_desc),
-                        checked = s.launcherMode,
-                        onToggle = { viewModel.toggleLauncherMode(context) },
-                    )
-                    TextButton(
-                        onClick = { openLauncherSettings(context) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            stringResource(R.string.open_launcher_settings),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
                     }
                 }
 

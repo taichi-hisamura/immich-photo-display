@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">Exibir sobre outras apps</string>
     <string name="overlay_perm_message">Para iniciar a app automaticamente após o reinício, o Android requer a permissão "Exibir sobre outras apps". Conceda-a no ecrã de definições que se abre.</string>
     <string name="open_overlay">Conceder Exibir sobre outras apps</string>
-        <string name="launcher_mode">Modo Launcher</string>
-        <string name="launcher_mode_desc">Definir como ecrã inicial predefinido. A forma mais fiável de iniciar no arranque — sem permissão de autostart. Ideal para molduras digitais dedicadas.</string>
-        <string name="open_launcher_settings">Abrir definições do launcher</string>
         <string name="check_now">Verificar agora</string>
-        <string name="launcher_lost_title">Modo launcher inativo</string>
-        <string name="launcher_lost_message">Outra aplicação está definida como ecrã inicial predefinido. Toque abaixo para abrir as definições do launcher e voltar a selecionar Immich Media Frame.</string>
-        <string name="set_as_launcher">Definir como launcher predefinido</string>
     <string name="open_settings">Abrir definições</string>
     <string name="skip">Ignorar</string>
     <string name="reset_title">Repor tudo?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">Abra as configurações sem sair da apresentação — mude o intervalo, ative o relógio e mais.</string>    <string name="tour_settings_overview_title">Visão Geral das Configurações</string>
     <string name="tour_settings_overview_body">Todas as mudanças são salvas automaticamente — sem botão de salvar. Role para baixo para explorar cada seção.</string>
     <string name="tour_settings_system_title">Sistema e Início Automático</string>
-    <string name="tour_settings_system_body">Iniciar na Inicialização e Modo Lançador permitem que o app inicie automaticamente — ideal para molduras digitais dedicadas.</string>
+    <string name="tour_settings_system_body">Iniciar na Inicialização controla o arranque normal da aplicação. O ManageEngine controla o arranque e a retoma do quiosque em dispositivos geridos.</string>
     <string name="tour_settings_cache_title">Cache de Mídia</string>
     <string name="tour_settings_cache_body">A sincronização automática baixa fotos em segundo plano para que a apresentação funcione offline e carregue instantaneamente.</string>
     <string name="tour_settings_connection_title">Conexão</string>

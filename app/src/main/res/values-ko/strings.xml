@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">다른 앱 위에 표시</string>
     <string name="overlay_perm_message">재부팅 후 앱을 자동으로 실행하려면 Android에서 "다른 앱 위에 표시" 권한이 필요합니다. 다음에 열리는 설정 화면에서 허용하세요.</string>
     <string name="open_overlay">다른 앱 위에 표시 권한 부여</string>
-        <string name="launcher_mode">런처 모드</string>
-        <string name="launcher_mode_desc">기본 홈 화면으로 설정. 부팅 시 자동 실행에 가장 안정적인 방법입니다 — 자동시작 권한이 필요 없습니다. 전용 사진 액자에 적합합니다.</string>
-        <string name="open_launcher_settings">런처 설정 열기</string>
         <string name="check_now">지금 확인</string>
-        <string name="launcher_lost_title">런처 모드 비활성</string>
-        <string name="launcher_lost_message">다른 앱이 기본 홈 화면으로 설정되어 있습니다. 아래를 탭하여 런처 설정을 열고 Immich Media Frame을 다시 선택하세요.</string>
-        <string name="set_as_launcher">기본 런처로 설정</string>
     <string name="open_settings">설정 열기</string>
     <string name="skip">건너뛰기</string>
     <string name="reset_title">모두 재설정하시겠습니까?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">슬라이드 쇼를 나가지 않고 설정을 열어 간격 변경, 시계 활성화 등을 할 수 있습니다.</string>    <string name="tour_settings_overview_title">설정 개요</string>
     <string name="tour_settings_overview_body">모든 변경사항이 자동으로 저장됩니다 — 저장 버튼이 필요 없습니다. 아래로 스크롤하여 각 섹션을 살펴보세요.</string>
     <string name="tour_settings_system_title">시스템 및 자동시작</string>
-    <string name="tour_settings_system_body">부팅 시 시작과 런처 모드를 통해 앱이 자동으로 실행될 수 있습니다 — 전용 사진 프레임에 이상적입니다.</string>
+    <string name="tour_settings_system_body">부팅 시 시작은 앱의 일반 부팅 실행을 제어합니다. 관리되는 기기의 키오스크 시작과 재개는 ManageEngine이 제어합니다.</string>
     <string name="tour_settings_cache_title">미디어 캐시</string>
     <string name="tour_settings_cache_body">자동 동기화가 백그라운드에서 사진을 다운로드하여 슬라이드 쇼가 오프라인으로 작동하고 즉시 로드됩니다.</string>
     <string name="tour_settings_connection_title">연결</string>

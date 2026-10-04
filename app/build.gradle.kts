@@ -16,8 +16,8 @@ android {
         applicationId = "com.familyphotoframe.immichframe.lowbandwidth"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1800000005
-        versionName = "0.6.5"
+        versionCode = 1800000006
+        versionName = "0.6.6"
 
         // Git SHA for self-update version comparison (config-cache safe)
         buildConfigField(

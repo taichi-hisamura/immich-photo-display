@@ -3,6 +3,9 @@
 > **Fork profile:** [Low-bandwidth fork profile](low-bandwidth-profile.md)
 > overrides upstream-oriented descriptions in this document.
 
+For the validated physical deployment boundary, see the
+[ManageEngine Single App Kiosk deployment guide](manageengine-kiosk-deployment.md).
+
 ## Problem
 
 [ImmichFrame_Android](https://github.com/immichFrame/ImmichFrame_Android) uses an intermediary server architecture: a Docker container (ImmichFrame Server) holds your Immich API key, fetches images from Immich, and serves a web UI. The Android app is a WebView pointed at that container. An optional `AuthenticationSecret` gates access to the frame server.

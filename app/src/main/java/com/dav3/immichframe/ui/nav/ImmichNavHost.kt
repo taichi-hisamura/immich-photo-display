@@ -6,13 +6,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import com.dav3.immichframe.ui.albums.AlbumSelectionScreen
@@ -58,7 +56,6 @@ private const val NAV_ANIM = 300
 
 @Composable
 fun ImmichNavHost(
-    suppressInitialOnboarding: Boolean = false,
     launchGeneration: Int = 0,
 ) {
     val navController = rememberNavController()
@@ -66,12 +63,6 @@ fun ImmichNavHost(
     val startRoute by navViewModel.startRoute.collectAsState()
 
     val route = startRoute ?: return // splash/placeholder while loading
-    val initialRoute = remember { route }
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val suppressAutoTour =
-        suppressInitialOnboarding &&
-            (currentBackStackEntry?.destination?.route ?: initialRoute) == initialRoute
-
     NavHost(
         navController = navController,
         startDestination = route,
@@ -82,7 +73,6 @@ fun ImmichNavHost(
     ) {
         composable(Routes.SETUP) {
             SetupScreen(
-                suppressOnboarding = suppressAutoTour,
                 intentGeneration = launchGeneration,
                 onSuccess = {
                     // After authentication, show Settings so the user can
@@ -97,7 +87,6 @@ fun ImmichNavHost(
         }
         composable(Routes.ALBUMS) {
             AlbumSelectionScreen(
-                suppressOnboarding = suppressAutoTour,
                 onStartSlideshow = {
                     navController.navigate(Routes.SLIDESHOW) {
                         popUpTo(Routes.ALBUMS) { inclusive = true }
@@ -108,7 +97,6 @@ fun ImmichNavHost(
         }
         composable(Routes.ALBUMS_FROM_SETTINGS) {
             AlbumSelectionScreen(
-                suppressOnboarding = suppressAutoTour,
                 onStartSlideshow = {
                     navController.navigate(Routes.SLIDESHOW) {
                         popUpTo(Routes.SLIDESHOW) { inclusive = false }
@@ -121,7 +109,6 @@ fun ImmichNavHost(
         }
         composable(Routes.SLIDESHOW) {
             SlideshowScreen(
-                suppressOnboarding = suppressAutoTour,
                 launchGeneration = launchGeneration,
                 onSettings = { navController.navigate(Routes.SETTINGS) },
                 onChangeAlbums = {
@@ -133,7 +120,6 @@ fun ImmichNavHost(
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(
-                suppressOnboarding = suppressAutoTour,
                 onBack = {
                     // Runtime Settings is normally opened on top of the
                     // slideshow. Pop back to that existing destination so its

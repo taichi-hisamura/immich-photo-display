@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">العرض فوق التطبيقات الأخرى</string>
     <string name="overlay_perm_message">لبدء التطبيق تلقائيًا بعد إعادة التشغيل، يتطلب Android إذن "العرض فوق التطبيقات الأخرى". امنحه في شاشة الإعدادات التي تفتح بعد ذلك.</string>
     <string name="open_overlay">منح إذن العرض فوق التطبيقات الأخرى</string>
-        <string name="launcher_mode">وضع المشغّل</string>
-        <string name="launcher_mode_desc">تعيين كالشاشة الرئيسية الافتراضية. أكثر طريقة موثوقة للتشغيل عند الإقلاع — لا حاجة لإذن التشغيل التلقائي. مثالي لإطارات الصور المخصصة.</string>
-        <string name="open_launcher_settings">فتح إعدادات المشغّل</string>
         <string name="check_now">تحقق الآن</string>
-        <string name="launcher_lost_title">وضع المشغّل غير نشط</string>
-        <string name="launcher_lost_message">تطبيق آخر معيّن كالشاشة الرئيسية الافتراضية. اضغط أدناه لفتح إعدادات المشغّل وإعادة تحديد Immich Media Frame.</string>
-        <string name="set_as_launcher">تعيين كمشغّل افتراضي</string>
     <string name="open_settings">فتح الإعدادات</string>
     <string name="skip">تخطي</string>
     <string name="reset_title">إعادة تعيين كل شيء؟</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">افتح الإعدادات دون مغادرة العرض — غيّر الفاصل، فعّل الساعة والمزيد.</string>    <string name="tour_settings_overview_title">نظرة عامة على الإعدادات</string>
     <string name="tour_settings_overview_body">يتم حفظ جميع التغييرات تلقائياً — لا حاجة لزر الحفظ. مرر للأسفل لاستكشاف كل قسم.</string>
     <string name="tour_settings_system_title">النظام والتشغيل التلقائي</string>
-    <string name="tour_settings_system_body">البدء عند الإقلاع ووضع المشغل يسمحان للتطبيق بالتشغيل التلقائي — مثالي لأطر الصور المخصصة.</string>
+    <string name="tour_settings_system_body">يتيح البدء عند الإقلاع تشغيل التطبيق بالطريقة العادية. يتولى ManageEngine بدء الكشك واستئنافه على الأجهزة المُدارة.</string>
     <string name="tour_settings_cache_title">ذاكرة التخزين المؤقت للوسائط</string>
     <string name="tour_settings_cache_body">يقوم المزامنة التلقائية بتنزيل الصور في الخلفية ليعمل العرض دون اتصال ويُحمّل فوراً.</string>
     <string name="tour_settings_connection_title">الاتصال</string>

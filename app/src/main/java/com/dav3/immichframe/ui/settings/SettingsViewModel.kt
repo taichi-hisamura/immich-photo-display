@@ -1,6 +1,5 @@
 package com.dav3.immichframe.ui.settings
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dav3.immichframe.data.sync.SyncScheduler
@@ -15,8 +14,6 @@ import com.dav3.immichframe.domain.repository.ImmichRepository
 import com.dav3.immichframe.domain.repository.MediaCacheRepository
 import com.dav3.immichframe.domain.repository.SettingsRepository
 import com.dav3.immichframe.domain.system.DisplayScheduleManager
-import com.dav3.immichframe.domain.system.openLauncherSettings
-import com.dav3.immichframe.domain.system.setLauncherModeEnabled
 import com.dav3.immichframe.ui.onboarding.TourSteps
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -216,17 +213,6 @@ constructor(
 
     fun toggleStartOnBoot() = update {
         it.copy(startOnBoot = !it.startOnBoot, bootVerified = false)
-    }
-
-    fun toggleLauncherMode(context: Context) {
-        val newEnabled = !uiState.value.settings.launcherMode
-        setLauncherModeEnabled(context, newEnabled)
-        update { it.copy(launcherMode = newEnabled) }
-        // Retain the historical settings action for upgraded installations;
-        // this build no longer declares the app as an Android Home candidate.
-        if (newEnabled) {
-            openLauncherSettings(context)
-        }
     }
 
     fun toggleAutoUpdate() = update { it.copy(autoUpdate = !it.autoUpdate) }
