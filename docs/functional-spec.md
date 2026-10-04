@@ -199,29 +199,16 @@ the feature is on, the device is a restricted OEM, and the flag is false — i.e
 the receiver hasn't proven itself yet. Once verified by a successful reboot, the
 button disappears and a normal description is shown.
 
-### F5c: Launcher Mode (Home Replacement)
+### F5c: Launcher Mode compatibility
 
-When **Launcher Mode** is enabled, the app registers itself as a Home launcher
-by enabling an `activity-alias` in the manifest via
-`PackageManager.setComponentEnabledSetting()`. The system always launches the
-default Home app on boot and on Home-button press — no BOOT_COMPLETED broadcast,
-no autostart permission, and no Background Activity Launch restriction applies.
-This is the **most reliable autostart method**, especially on Chinese OEM ROMs
-(OPPO/Realme/Xiaomi/etc.) that silently block boot broadcasts to non-whitelisted
-apps, and works around the known Android 15/16 BOOT_COMPLETED delivery bug.
+The app no longer registers an Android Home activity. The launcher-mode
+preference and related settings actions are retained only for compatibility with
+upgrades from earlier releases; enabling them does not make this app a default
+Home candidate. ManageEngine owns the Android Home and Single App Kiosk
+configuration, and the app does not show a launcher-loss dialog on resume.
 
-When Launcher Mode is on, the app shows an **"Open Launcher Settings"** button in
-Settings that opens the system Home settings page
-(`ACTION_HOME_SETTINGS`), allowing the user to switch to a different launcher
-or re-select this app. The same button is available in the slideshow hover UI
-(top bar, apps icon) when launcher mode is active, so the user can switch
-launchers without navigating to settings.
-
-If the app loses its default-launcher status while Launcher Mode is enabled
-(e.g., the user selected another launcher), a dialog appears on resume
-prompting the user to re-select Immich Photo Display as the default Home.
-Toggling Launcher Mode off disables the alias and reverts to normal
-behaviour.
+The normal `MAIN` + `LAUNCHER` entry remains available so ManageEngine and the
+user-facing Android launcher can start the app as a regular application.
 
 ### Post-update unattended recovery
 
@@ -233,10 +220,10 @@ frame, the receiver restores the display schedule and resumes the slideshow
 without requiring a remote-control session or a local tap.
 
 The receiver does not wake the device during an intentional Display Sleep
-Schedule window. On Android 10 and later, bringing the app to the foreground
-requires either the granted **Display over other apps** permission or the app
-holding the default Home role. If neither condition is true, settings and cache
-remain intact but Android blocks the unattended foreground launch.
+Schedule window. Bringing the app to the foreground from this receiver requires
+the granted **Display over other apps** permission. If it is not granted,
+settings and cache remain intact but Android blocks the unattended foreground
+launch. ManageEngine remains responsible for kiosk resume.
 
 ### F5d: Self-Update via GitHub Releases
 
@@ -336,7 +323,7 @@ Options:
     100% preserves the device's configured brightness. Intermediate values
     smoothly dim the visible slideshow; playback continues normally.
 - **Start on Boot** — launch on device boot (default off). Requires the "Display over other apps" permission (Android 10+ BAL exemption); on Chinese OEMs, also shows an "Open Autostart Settings" button until a reboot confirms the receiver fired.
-- **Launcher Mode** — register as a Home launcher (default off; only visible when Start on Boot is enabled). The most reliable autostart method; the system always launches the Home app on boot, bypassing BOOT_COMPLETED and OEM autostart blocks entirely. Shows an "Open Launcher Settings" button to switch launchers or re-select this app; the same action is available in the slideshow hover UI.
+- **Launcher Mode** — legacy compatibility preference (default off; only visible when Start on Boot is enabled). It does not register the app as an Android Home app; ManageEngine controls kiosk startup and resume.
 - **Auto-Update** — permanently disabled until a fork-owned signed release
   channel is configured.
 - **Media Cache** section:

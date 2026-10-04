@@ -21,9 +21,8 @@ class PackageReplacedReceiverTest {
     }
 
     @Test
-    fun `background launch accepts overlay permission or default launcher role`() {
-        assertTrue(canLaunchFrameFromBackground(hasOverlayPermission = true, isDefaultLauncher = false))
-        assertTrue(canLaunchFrameFromBackground(hasOverlayPermission = false, isDefaultLauncher = true))
-        assertFalse(canLaunchFrameFromBackground(hasOverlayPermission = false, isDefaultLauncher = false))
+    fun `background launch requires overlay permission`() {
+        assertTrue(canLaunchFrameFromBackground(hasOverlayPermission = true))
+        assertFalse(canLaunchFrameFromBackground(hasOverlayPermission = false))
     }
 }

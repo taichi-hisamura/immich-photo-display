@@ -222,8 +222,8 @@ constructor(
         val newEnabled = !uiState.value.settings.launcherMode
         setLauncherModeEnabled(context, newEnabled)
         update { it.copy(launcherMode = newEnabled) }
-        // When enabling, show the home-chooser so the user can pick this app
-        // as the default launcher.
+        // Retain the historical settings action for upgraded installations;
+        // this build no longer declares the app as an Android Home candidate.
         if (newEnabled) {
             openLauncherSettings(context)
         }

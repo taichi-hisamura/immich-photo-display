@@ -6,14 +6,10 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -24,8 +20,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.dav3.immichframe.domain.system.isDefaultLauncher
-import com.dav3.immichframe.domain.system.openLauncherSettings
 import com.dav3.immichframe.ui.nav.ImmichNavHost
 import com.dav3.immichframe.ui.settings.SettingsViewModel
 import com.dav3.immichframe.ui.theme.ImmichFrameTheme
@@ -122,21 +116,6 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                // ---- Launcher-monitor: detect if another app became the
-                // default Home while launcher mode is enabled. ----
-                var showLauncherLostDialog by remember { mutableStateOf(false) }
-                DisposableEffect(s.launcherMode) {
-                    val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_RESUME && s.launcherMode) {
-                            // Check on every resume (covers returning from the
-                            // home-chooser, task switch, etc.)
-                            showLauncherLostDialog = !isDefaultLauncher(this@MainActivity)
-                        }
-                    }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-                }
-
                 ImmichNavHost(
                     suppressInitialOnboarding = suppressInitialOnboarding,
                     launchGeneration = launchGeneration,
@@ -145,29 +124,6 @@ class MainActivity : FragmentActivity() {
                 // Update check on startup (non-blocking, background download)
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     updateVm.checkForUpdate()
-                }
-
-                // Launcher-lost dialog: another app is the default Home while
-                // launcher mode is enabled.
-                if (showLauncherLostDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showLauncherLostDialog = false },
-                        title = { Text(getString(R.string.launcher_lost_title)) },
-                        text = { Text(getString(R.string.launcher_lost_message)) },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showLauncherLostDialog = false
-                                openLauncherSettings(this@MainActivity)
-                            }) {
-                                Text(getString(R.string.set_as_launcher))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showLauncherLostDialog = false }) {
-                                Text(getString(android.R.string.cancel))
-                            }
-                        },
-                    )
                 }
             }
         }
