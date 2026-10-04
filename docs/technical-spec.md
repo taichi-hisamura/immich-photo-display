@@ -71,7 +71,7 @@ immich-android/
 │   │   │   │   ├── Models.kt            # Album, Asset, SlideshowSettings, SyncProgress
 │   │   │   │   └── RequiredPermission.kt # Permission registry + PermissionCheckResult
 │   │   │   ├── repository/      # Repository interfaces
-│   │   │   ├── system/          # AutostartPermissions.kt, LauncherHelper.kt, BiometricHelper.kt
+│   │   │   ├── system/          # AutostartPermissions.kt, DisplayScheduleManager.kt, BiometricHelper.kt
 │   │   │   └── sync/            # MediaCacheWorker, SyncScheduler
 │   │   ├── di/                  # Hilt modules
 │   │   ├── ui/
@@ -88,7 +88,7 @@ immich-android/
 │   │   ├── BootReceiver.kt      # BOOT_COMPLETED → launch slideshow (guards startActivity with SYSTEM_ALERT_WINDOW check)
 │   │   ├── PackageReplacedReceiver.kt # MY_PACKAGE_REPLACED → restore schedule, wake, resume configured frame
 │   │   ├── ImmichFrameApp.kt    # Application class (@HiltAndroidApp)
-│   │   └── MainActivity.kt      # Single activity (also target of LauncherAlias)
+│   │   └── MainActivity.kt      # Single activity and normal launcher entry
 │   ├── src/main/res/
 │   │   ├── drawable/app_logo.xml             # In-app logo (no bg fill): frame + sun + mountain
 │   │   ├── drawable/ic_launcher_foreground.xml  # Launcher foreground (day: white bg + icon at 75%)
@@ -186,9 +186,10 @@ probe uses that asset ID, falling back to an album thumbnail ID when the search
 is empty. Only HTTP 403 means denied; other HTTP and network failures remain
 unknown rather than becoming false grants or preventing later probes.
 
-This build does not request or inspect `RoleManager.ROLE_HOME`. The Android Home
-role remains owned by the system launcher or ManageEngine's kiosk controller;
-the app is started as a regular `MAIN` + `LAUNCHER` application.
+This build starts as a regular `MAIN` + `LAUNCHER` application. It does not
+declare a `HOME` intent category, request or inspect the Android Home role, or
+provide a default-Home prompt. Android Home selection and kiosk lifecycle remain
+owned by the system launcher or ManageEngine's kiosk controller.
 
 After an in-place APK update, Android sends the system-protected
 `ACTION_MY_PACKAGE_REPLACED` broadcast to `PackageReplacedReceiver`. The
@@ -332,7 +333,6 @@ Setup → Albums → Slideshow
 | Show playback controls | DataStore | `show_playback_controls` | String bool (default true) |
 | Show navigation controls | DataStore | `show_navigation_controls` | String bool (default true) |
 | Start on boot | DataStore | `start_on_boot` | String bool |
-| Launcher mode | DataStore | `launcher_mode` | String bool (legacy compatibility preference; does not register Home) |
 | Boot verified | DataStore | `boot_verified` | String bool (self-test: BootReceiver sets true on successful fire) |
 | Auto-update | DataStore | `auto_update` | Forced `false` in this fork |
 | Adaptive background | DataStore | `adaptive_background` | String bool |
@@ -365,10 +365,10 @@ Setup → Albums → Slideshow
 > It retains Immich metadata for diagnostics; all image types still use the
 > static preview endpoint.
 
-For compatibility with older task launches, `MainActivity` still recognizes an
-explicit `ACTION_MAIN` with `CATEGORY_HOME` and can suppress the initial tour for
-that launch. The current manifest does not declare a `HOME` intent-filter, so
-this path does not make the app an Android Home candidate.
+Older releases stored a `launcher_mode` DataStore key. Current code ignores that
+unknown key; no DataStore migration or deletion is required. Installed devices
+retain their other settings, credentials, selected albums, Room cache, and
+normal `MAIN` + `LAUNCHER` entry across upgrade.
 
 All settings flow through a single shared DataStore instance
 (`DataStoreProvider.kt`) — there must be only one DataStore active per file

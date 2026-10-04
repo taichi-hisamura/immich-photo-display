@@ -47,8 +47,6 @@ lets you pick which album(s) to display, and remembers your choice.
 - Failed or unresponsive image loads are skipped automatically so the frame
   does not stop on one photo
 - Start on boot (with SYSTEM_ALERT_WINDOW permission for Android 10+ BAL exemption, plus OEM autostart permission detection)
-- Legacy launcher-mode preferences are retained for upgrades, but the app is not
-  registered as an Android Home app; ManageEngine owns kiosk startup and resume
 - Automatic post-update recovery — a configured frame restores its display schedule, wakes the panel, and resumes the slideshow after an in-place APK update
 - Fork self-update disabled until a fork-owned signed release channel exists
 - Preview-only offline cache with a six-hour default background sync and a
@@ -65,6 +63,16 @@ lets you pick which album(s) to display, and remembers your choice.
 - API key stored encrypted on-device (AES-256, Android Keystore)
 - Optional six-digit in-app administration PIN protects album selection,
   server URL, and API key changes (works without device screen lock)
+
+## Managed kiosk deployment
+
+Immich Photo Display has been validated on a Lenovo Tab M10 FHD Plus with
+ManageEngine Single App Kiosk and Tailscale. Since v0.6.5, the app is a normal
+Android application; it must not be registered as the Android Home launcher.
+ManageEngine owns the Home and kiosk lifecycle, while Tailscale provides the
+Always-on VPN path to self-hosted Immich. ManageEngine Self Service 26.09.01+
+is recommended. See the [deployment guide](docs/manageengine-kiosk-deployment.md)
+for the tested configuration and recovery steps.
 
 ## Screenshots
 

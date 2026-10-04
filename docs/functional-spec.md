@@ -154,7 +154,6 @@ Tap the screen to reveal controls:
 - Optional navigation controls: previous and next buttons
 - Photo count (current position / total)
 - Update status icon (checking / downloading / ready)
-- Launcher switch (apps icon, when Launcher Mode is active)
 - Settings (gear icon)
 
 Controls auto-hide after 5 seconds of no interaction.
@@ -199,16 +198,13 @@ the feature is on, the device is a restricted OEM, and the flag is false — i.e
 the receiver hasn't proven itself yet. Once verified by a successful reboot, the
 button disappears and a normal description is shown.
 
-### F5c: Launcher Mode compatibility
+### F5c: Managed kiosk launch and resume
 
-The app no longer registers an Android Home activity. The launcher-mode
-preference and related settings actions are retained only for compatibility with
-upgrades from earlier releases; enabling them does not make this app a default
-Home candidate. ManageEngine owns the Android Home and Single App Kiosk
-configuration, and the app does not show a launcher-loss dialog on resume.
-
-The normal `MAIN` + `LAUNCHER` entry remains available so ManageEngine and the
-user-facing Android launcher can start the app as a regular application.
+The app is launched as a regular Android application through its `MAIN` +
+`LAUNCHER` entry. ManageEngine owns Android Home selection, Single App Kiosk
+startup, Pause/Resume, and reboot recovery. The app does not request or require
+the Android Home role, expose a default-Home prompt, or provide a launcher-mode
+setting. Kiosk recovery must return to the slideshow without user interaction.
 
 ### Post-update unattended recovery
 
@@ -323,7 +319,6 @@ Options:
     100% preserves the device's configured brightness. Intermediate values
     smoothly dim the visible slideshow; playback continues normally.
 - **Start on Boot** — launch on device boot (default off). Requires the "Display over other apps" permission (Android 10+ BAL exemption); on Chinese OEMs, also shows an "Open Autostart Settings" button until a reboot confirms the receiver fired.
-- **Launcher Mode** — legacy compatibility preference (default off; only visible when Start on Boot is enabled). It does not register the app as an Android Home app; ManageEngine controls kiosk startup and resume.
 - **Auto-Update** — permanently disabled until a fork-owned signed release
   channel is configured.
 - **Media Cache** section:
@@ -421,11 +416,10 @@ a user lands on a screen — only steps not yet completed are shown.
   any remain, the tour auto-starts for those steps. The Settings screen waits
   for that persisted state to load before evaluating the tour, so a completed
   tour never flashes briefly while the screen opens.
-- When the app is launched by the Android Home intent after being selected as
-  the default launcher, the tour is suppressed on the initial destination.
-  This prevents an operational launcher start from repeatedly showing a
-  coachmark overlay. Navigating to another screen still allows its normal
-  tour, and the existing manual tour replay actions remain available.
+- Operational relaunch through the normal package launcher or ManageEngine kiosk
+  does not change the persisted tour state. Navigating to another screen still
+  allows its normal tour, and the existing manual tour replay actions remain
+  available.
 - The overlay shows a semi-transparent scrim over the screen with a
   rounded-rect spotlight cutout around the target element (if any). A tooltip
   card displays the step title, body, step counter ("Step X of Y"), and

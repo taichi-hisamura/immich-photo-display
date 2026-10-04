@@ -146,11 +146,21 @@ Format:
 <!-- Append new clarifications below this line. -->
 
 - **2026-10-04** — ManageEngine Single App Kiosk owns Android Home and kiosk
-  resume for the deployed frame. The app must not register an `activity-alias`
-  with `HOME`, inspect or require the Home role, or prompt the user to select
-  Immich Photo Display as the default Home. Keep the normal `MAIN` + `LAUNCHER`
-  entry so MDM can start the app as a regular application. Legacy launcher-mode
-  preferences may remain only for upgrade compatibility.
+  resume for the deployed frame. This is the authoritative current design:
+  Immich Photo Display must never request or require the Android Home role, use
+  a `HOME` intent category, depend on `ROLE_HOME`, show a default-Home prompt,
+  or restore launcher-mode behavior. Keep the normal `MAIN` + `LAUNCHER` entry
+  so MDM can start the app as a regular application. ManageEngine owns Android
+  Home and Single App Kiosk lifecycle. Kiosk recovery must work without user
+  interaction. The v0.6.5 pilot baseline is Lenovo Tab M10 FHD Plus / Android
+  10, ManageEngine Self Service 26.09.01+, Tailscale with Always-on VPN, and
+  verified reboot recovery. Historical `launcher_mode` DataStore values are
+  ignored after upgrade; they do not justify restoring the removed UI or code.
+
+- **SUPERSEDED: 2026-10-04** — The former default-launcher implementation was
+  superseded by the 2026-10-04 ManageEngine Single App Kiosk decision above.
+  Do not reintroduce Home chooser, Home-role monitoring, or a launcher-loss
+  dialog to restore that behavior.
 
 - **2026-10-04** — Slideshow position persistence. Returning from runtime
   Settings or Android Home must restore the previously visible asset even when
@@ -179,7 +189,7 @@ Format:
   controls Android upgrades. Updated: `docs/ci-cd.md` and the family project
   release runbook.
 
-- **2026-10-03** — Default launcher startup. Selecting Immich Photo Display as
+- **SUPERSEDED: 2026-10-03** — Default launcher startup. Selecting Immich Photo Display as
   the Android default Home launcher can relaunch the app with
   `ACTION_MAIN` + `CATEGORY_HOME`. That operational launch must not repeatedly
   start the initial coachmark tour; suppress the tour only on the initial
@@ -523,7 +533,7 @@ Format:
   sections into view. 37 new strings (EN + 12 locales). Updated:
   functional-spec (F7), technical-spec (persistence table + package layout),
   ui-spec (overlay description), README.
-- **2026-07-26** — Launcher Mode feature. After real-hardware testing on a
+- **SUPERSEDED: 2026-07-26** — Launcher Mode feature. After real-hardware testing on a
   Realme PKH110 (ColorOS 16 / Android 16), BOOT_COMPLETED was confirmed to
   never fire (boot_verified stayed false across 2 reboots) — this is both
   the known Android 15/16 platform bug (issuetracker #471573182) and the

@@ -194,14 +194,13 @@ on, it aligns to the nearest grid point on release:
 
 ### 4.6 System
 
-**Settings panel** (shown with Start on Boot and Launcher Mode both ON):
+**Settings panel** (shown with Start on Boot ON):
 
 ![Settings — System](screenshots/settings/system.png)
 
 | Setting | Default | Outcome |
 |---|---|---|
 | **Start on Boot** | Off | Launches the app automatically when the device boots. Requires the "Display over other apps" permission (Android 10+ BAL exemption). On restricted Chinese OEMs, an "Open Autostart Settings" button appears until a reboot confirms the receiver fired. |
-| **Launcher Mode** *(visible only when Start on Boot is ON)* | Off | Legacy compatibility preference. It does not register the app as a Home launcher; ManageEngine controls kiosk startup and resume. |
 | **Auto-Update** | On | Checks GitHub for new builds on app start. Hidden if installed from the Play Store. |
 | **Check Now** (button) | — | Triggers an immediate update check regardless of the Auto-Update toggle. |
 
