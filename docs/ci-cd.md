@@ -73,25 +73,34 @@ untouched files; this policy does not introduce a large line-ending rewrite.
 Follow this order for every production release:
 
 1. Confirm the PR verification workflow succeeds.
-2. Merge the approved PR into `main`.
-3. On the owner-managed local machine, check out the exact intended source
-   commit from `main`.
-4. Reconfirm or update `versionName` and `versionCode` according to the
-   version policy above.
-5. Run the local release build procedure below.
-6. Enter the release keystore path, password, and alias interactively.
-7. Build the signed release APK locally.
-8. Verify the application ID, `versionName`, `versionCode`, signer certificate
-   SHA-256, and APK SHA-256.
-9. Pilot the exact APK on the pilot device.
-10. If the pilot passes, create the annotated Git tag manually.
-11. Create the GitHub Release manually from that tag.
-12. Upload the exact same APK to the GitHub Release.
-13. Upload the exact same APK to ManageEngine.
-14. Roll out that same binary to the remaining devices.
+2. Confirm that the release PR already contains the intended `versionName` and
+   `versionCode`, then merge that approved PR into `main`.
+3. On the owner-managed local machine, check out the exact merged commit from
+   `main`.
+4. Confirm that the working tree is clean.
+5. Confirm that the committed `versionName` and `versionCode` in that exact
+   commit already match the intended release.
+6. If either version field is wrong, stop the release. Do not edit it only in
+   the local working tree; create and merge a corrective release/version PR,
+   then restart this flow from the new exact commit.
+7. Run the local release build procedure below from that exact clean commit.
+8. Enter the release keystore path, password, and alias interactively.
+9. Build the signed release APK locally.
+10. Verify the application ID, `versionName`, `versionCode`, signer certificate
+    SHA-256, and APK SHA-256.
+11. Pilot the exact APK on the pilot device.
+12. If the pilot passes, create the annotated Git tag manually on the exact
+    committed source tree.
+13. Create the GitHub Release manually from that tag.
+14. Upload the exact same APK to the GitHub Release.
+15. Upload the exact same APK to ManageEngine.
+16. Roll out that same binary to the remaining devices.
 
 Do not rebuild separate APKs for GitHub Release and ManageEngine. The APK
 verified on the pilot device must be the APK distributed through both channels.
+The Git tag, GitHub source commit, and locally built APK must correspond to the
+same committed tree. Production APKs must be built only from a clean working
+tree; never patch production version fields only in that working tree.
 
 ### Local production build
 
