@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">Поверх других приложений</string>
     <string name="overlay_perm_message">Для автоматического запуска приложения после перезагрузки Android требует разрешение «Поверх других приложений». Предоставьте его в открывшемся экране настроек.</string>
     <string name="open_overlay">Предоставить Поверх других приложений</string>
-        <string name="launcher_mode">Режим Launcher</string>
-        <string name="launcher_mode_desc">Установить как главный экран по умолчанию. Самый надёжный способ запуска при загрузке — не требует разрешения автозапуска. Идеально для специализированных фоторамок.</string>
-        <string name="open_launcher_settings">Открыть настройки launcher</string>
         <string name="check_now">Проверить сейчас</string>
-        <string name="launcher_lost_title">Режим launcher неактивен</string>
-        <string name="launcher_lost_message">Другое приложение установлено как главный экран по умолчанию. Нажмите ниже, чтобы открыть настройки launcher и снова выбрать Immich Media Frame.</string>
-        <string name="set_as_launcher">Установить как launcher по умолчанию</string>
     <string name="open_settings">Открыть настройки</string>
     <string name="skip">Пропустить</string>
     <string name="reset_title">Сбросить всё?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">Откройте настройки, не выходя из слайд-шоу — измените интервал, включите часы и т.д.</string>    <string name="tour_settings_overview_title">Обзор настроек</string>
     <string name="tour_settings_overview_body">Все изменения сохраняются автоматически — без кнопки сохранения. Прокрутите вниз, чтобы изучить разделы.</string>
     <string name="tour_settings_system_title">Система и автозапуск</string>
-    <string name="tour_settings_system_body">«Запуск при загрузке» и «Режим лаунчера» позволяют приложению запускаться автоматически — идеально для цифровой фоторамки.</string>
+    <string name="tour_settings_system_body">«Запуск при загрузке» управляет обычным запуском приложения. ManageEngine управляет запуском и возобновлением киоска на управляемых устройствах.</string>
     <string name="tour_settings_cache_title">Кэш медиа</string>
     <string name="tour_settings_cache_body">Автосинхронизация скачивает фото в фоне, чтобы слайд-шоу работало офлайн и загружалось мгновенно.</string>
     <string name="tour_settings_connection_title">Подключение</string>

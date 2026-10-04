@@ -88,13 +88,7 @@
         <string name="start_on_boot">Start on Boot</string>
         <string name="start_on_boot_desc">Launch the app automatically after device reboot</string>
         <string name="boot_not_verified_desc">Autostart permission may not be granted \u2014 reboot to verify. If it doesn\u2019t launch, use the button below to open your device\u2019s autostart settings.</string>
-        <string name="launcher_mode">Launcher Mode</string>
-        <string name="launcher_mode_desc">Set as the default Home screen. The most reliable way to launch on boot — no autostart permission needed. Ideal for dedicated photo frames.</string>
-        <string name="open_launcher_settings">Open Launcher Settings</string>
         <string name="check_now">Check Now</string>
-        <string name="launcher_lost_title">Launcher Mode Inactive</string>
-        <string name="launcher_lost_message">Another app is set as the default Home. Tap below to open launcher settings and re-select Immich Media Frame.</string>
-        <string name="set_as_launcher">Set as Default Launcher</string>
         <string name="open_autostart">Open Autostart Settings</string>
         <string name="auto_update">Auto-Update</string>
         <string name="auto_update_desc">Check GitHub for new builds and download them automatically</string>
@@ -287,7 +281,7 @@
     <string name="tour_settings_overview_title">Settings Overview</string>
     <string name="tour_settings_overview_body">All changes save automatically — no save button needed. Scroll down to explore each section.</string>
     <string name="tour_settings_system_title">System &amp; Autostart</string>
-    <string name="tour_settings_system_body">Start on Boot and Launcher Mode let the app launch automatically — ideal for dedicated photo frames.</string>
+    <string name="tour_settings_system_body">Start on Boot controls the app\'s normal boot launch. ManageEngine controls kiosk startup and resume on managed frames.</string>
     <string name="tour_settings_cache_title">Media Cache</string>
     <string name="tour_settings_cache_body">Auto Sync downloads photos in the background so the slideshow works offline and loads instantly.</string>
     <string name="tour_settings_connection_title">Connection</string>

@@ -84,7 +84,6 @@ fun SettingsContent(
     onToggleClockSeconds: () -> Unit,
     onToggleClockSnapToGrid: () -> Unit,
     onToggleStartOnBoot: () -> Unit,
-    onToggleLauncherMode: () -> Unit,
     onToggleAutoUpdate: () -> Unit,
     onToggleAutoSync: () -> Unit,
     onUpdateSyncInterval: (Int) -> Unit,
@@ -119,7 +118,7 @@ fun SettingsContent(
         HorizontalDivider()
         ClockSection(s, onToggleClock, onUpdateClockSize, onUpdateClockFormat, onToggleClockSeconds, onToggleClockSnapToGrid)
         HorizontalDivider()
-        SystemSection(s, onToggleStartOnBoot, onToggleLauncherMode, onToggleAutoUpdate, onCheckForUpdate)
+        SystemSection(s, onToggleStartOnBoot, onToggleAutoUpdate, onCheckForUpdate)
         HorizontalDivider()
         MediaCacheSection(s, onToggleAutoSync, onUpdateSyncInterval, onSyncNow)
         HorizontalDivider()
@@ -366,7 +365,6 @@ private fun ClockSection(
 private fun SystemSection(
     s: SlideshowSettings,
     onToggleStartOnBoot: () -> Unit,
-    onToggleLauncherMode: () -> Unit,
     onToggleAutoUpdate: () -> Unit,
     onCheckForUpdate: () -> Unit,
 ) {
@@ -377,14 +375,6 @@ private fun SystemSection(
         checked = s.startOnBoot,
         onToggle = onToggleStartOnBoot,
     )
-    if (s.startOnBoot) {
-        SwitchItemPreview(
-            title = stringResource(R.string.launcher_mode),
-            subtitle = stringResource(R.string.launcher_mode_desc),
-            checked = s.launcherMode,
-            onToggle = onToggleLauncherMode,
-        )
-    }
     SwitchItemPreview(
         title = stringResource(R.string.auto_update),
         subtitle = stringResource(R.string.auto_update_desc),
@@ -749,9 +739,8 @@ private fun SettingsSectionPreview_System() {
     ImmichFrameTheme {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             SystemSection(
-                s = SlideshowSettings(startOnBoot = true, launcherMode = true),
+                s = SlideshowSettings(startOnBoot = true),
                 onToggleStartOnBoot = {},
-                onToggleLauncherMode = {},
                 onToggleAutoUpdate = {},
                 onCheckForUpdate = {},
             )

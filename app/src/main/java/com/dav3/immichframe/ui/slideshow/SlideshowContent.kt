@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.GridView
@@ -101,8 +100,6 @@ fun SlideshowContent(
     updateMessage: String = "",
     onInstallUpdate: () -> Unit = {},
     onDismissUpdate: () -> Unit = {},
-    launcherMode: Boolean = false,
-    onOpenOtherLauncher: () -> Unit = {},
 ) {
     val s = settings
 
@@ -234,15 +231,6 @@ fun SlideshowContent(
                     }
                     Spacer(Modifier.weight(1f))
                     updateIcon()
-                    if (launcherMode) {
-                        IconButton(onClick = onOpenOtherLauncher) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ExitToApp,
-                                "Switch to another launcher",
-                                tint = Color.White,
-                            )
-                        }
-                    }
                     IconButton(
                         onClick = onChangeAlbums,
                         modifier = tourState?.let { Modifier.tourTarget("slideshow_albums", it) }

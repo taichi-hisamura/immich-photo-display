@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">Wyświetlanie nad innymi aplikacjami</string>
     <string name="overlay_perm_message">Aby automatycznie uruchomić aplikację po ponownym uruchomieniu, Android wymaga uprawnienia „Wyświetlanie nad innymi aplikacjami". Nadaj je na kolejnym ekranie ustawień.</string>
     <string name="open_overlay">Nadaj uprawnienie Wyświetlanie nad innymi aplikacjami</string>
-        <string name="launcher_mode">Tryb Launchera</string>
-        <string name="launcher_mode_desc">Ustaw jako domyślny ekran główny. Najbardziej niezawodny sposób uruchamiania przy starcie — nie wymaga uprawnienia autostartu. Idealny dla dedykowanych ramek na zdjęcia.</string>
-        <string name="open_launcher_settings">Otwórz ustawienia launchera</string>
         <string name="check_now">Sprawdź teraz</string>
-        <string name="launcher_lost_title">Tryb launchera nieaktywny</string>
-        <string name="launcher_lost_message">Inna aplikacja jest ustawiona jako domyślny ekran główny. Stuknij poniżej, aby otworzyć ustawienia launchera i ponownie wybrać Immich Media Frame.</string>
-        <string name="set_as_launcher">Ustaw jako domyślny launcher</string>
     <string name="open_settings">Otwórz ustawienia</string>
     <string name="skip">Pomiń</string>
     <string name="reset_title">Zresetować wszystko?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">Otwórz ustawienia bez wychodzenia z pokazu slajdów — zmień interwał, włącz zegar i więcej.</string>    <string name="tour_settings_overview_title">Przegląd ustawień</string>
     <string name="tour_settings_overview_body">Wszystkie zmiany zapisują się automatycznie — bez przycisku zapisu. Przewiń w dół, aby przejrzeć sekcje.</string>
     <string name="tour_settings_system_title">System i autostart</string>
-    <string name="tour_settings_system_body">Uruchamianie przy starcie i Tryb Launchera pozwalają aplikacji uruchamiać się automatycznie — idealne dla dedykowanych ramek cyfrowych.</string>
+    <string name="tour_settings_system_body">Uruchamianie przy starcie steruje normalnym uruchomieniem aplikacji. ManageEngine steruje uruchamianiem i wznawianiem kiosku na zarządzanych urządzeniach.</string>
     <string name="tour_settings_cache_title">Pamięć podręczna mediów</string>
     <string name="tour_settings_cache_body">Automatyczna synchronizacja pobiera zdjęcia w tle, aby pokaz slajdów działał offline i ładował się natychmiast.</string>
     <string name="tour_settings_connection_title">Połączenie</string>

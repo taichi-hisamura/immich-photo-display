@@ -10,7 +10,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
@@ -32,10 +31,10 @@ private const val RESUME_REHIDE_DELAY_MILLIS = 300L
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     /**
-     * A launcher can deliver a new HOME intent to the existing activity while
-     * its Compose destination remains unchanged. Propagate that event so the
-     * slideshow restarts its playback effects even when no lifecycle state
-     * transition is observed by the destination.
+     * A launcher or kiosk controller can deliver a new launch intent to the
+     * existing activity while its Compose destination remains unchanged.
+     * Propagate that event so the slideshow restarts its playback effects even
+     * when no lifecycle state transition is observed by the destination.
      */
     private var launchGeneration by mutableIntStateOf(0)
 
@@ -55,17 +54,6 @@ class MainActivity : FragmentActivity() {
                 val settingsVm: SettingsViewModel = hiltViewModel()
                 val settingsState by settingsVm.uiState.collectAsState()
                 val s = settingsState.settings
-                // A HOME intent is delivered when the app is launched as the
-                // selected default launcher. This is an operational launch,
-                // not a deliberate visit to a screen, so do not start the
-                // coachmark tour on the initial destination. Navigating to
-                // another screen still permits the normal tour and its
-                // manual replay action.
-                val suppressInitialOnboarding = remember {
-                    intent?.action == Intent.ACTION_MAIN &&
-                        intent?.categories?.contains(Intent.CATEGORY_HOME) == true
-                }
-
                 // Keep every in-app screen (including Settings) in the same
                 // immersive presentation as the slideshow. System bars remain
                 // reachable with a swipe, but do not occupy screen space while
@@ -117,7 +105,6 @@ class MainActivity : FragmentActivity() {
                 }
 
                 ImmichNavHost(
-                    suppressInitialOnboarding = suppressInitialOnboarding,
                     launchGeneration = launchGeneration,
                 )
 

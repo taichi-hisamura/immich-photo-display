@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Pause
@@ -77,7 +76,6 @@ import com.dav3.immichframe.domain.model.ClockFormat
 import com.dav3.immichframe.domain.model.ClockPosition
 import com.dav3.immichframe.domain.model.FillMode
 import com.dav3.immichframe.domain.model.SlideshowSettings
-import com.dav3.immichframe.domain.system.openOtherLauncher
 import com.dav3.immichframe.ui.onboarding.TourHost
 import com.dav3.immichframe.ui.onboarding.TourScreen
 import com.dav3.immichframe.ui.onboarding.TourStep
@@ -542,12 +540,6 @@ fun SlideshowScreen(
                                 },
                                 forceVisible = tourState.activeTargetKey == "slideshow_update",
                             )
-                        }
-                        if (s.launcherMode) {
-                            val context = LocalContext.current
-                            IconButton(onClick = { openOtherLauncher(context) }) {
-                                Icon(Icons.AutoMirrored.Filled.ExitToApp, "Switch to another launcher", tint = Color.White)
-                            }
                         }
                         IconButton(
                             onClick = onSettings,

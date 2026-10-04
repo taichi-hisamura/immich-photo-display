@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">Über anderen Apps einblenden</string>
     <string name="overlay_perm_message">Um die App nach dem Neustart automatisch zu starten, benötigt Android die Berechtigung „Über anderen Apps einblenden". Erteilen Sie sie im nächsten Einstellungsbildschirm.</string>
     <string name="open_overlay">Über anderen Apps einblenden erlauben</string>
-        <string name="launcher_mode">Launcher-Modus</string>
-        <string name="launcher_mode_desc">Als Standard-Startbildschirm festlegen. Die zuverlässigste Methode zum Starten nach dem Booten — keine Autostart-Berechtigung erforderlich. Ideal für dedizierte Bilderrahmen.</string>
-        <string name="open_launcher_settings">Launcher-Einstellungen öffnen</string>
         <string name="check_now">Jetzt prüfen</string>
-        <string name="launcher_lost_title">Launcher-Modus inaktiv</string>
-        <string name="launcher_lost_message">Eine andere App ist als Standard-Startbildschirm festgelegt. Tippen Sie unten, um die Launcher-Einstellungen zu öffnen und Immich Media Frame erneut auszuwählen.</string>
-        <string name="set_as_launcher">Als Standard-Launcher festlegen</string>
     <string name="open_settings">Einstellungen öffnen</string>
     <string name="skip">Überspringen</string>
     <string name="reset_title">Alles zurücksetzen?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">Öffne die Einstellungen, ohne die Diashow zu verlassen — ändere Intervall, aktiviere die Uhr und mehr.</string>    <string name="tour_settings_overview_title">Einstellungsüberblick</string>
     <string name="tour_settings_overview_body">Alle Änderungen werden automatisch gespeichert — keine Speichertaste. Scrolle nach unten, um jeden Abschnitt zu erkunden.</string>
     <string name="tour_settings_system_title">System &amp; Autostart</string>
-    <string name="tour_settings_system_body">Beim Start starten und Launcher-Modus lassen die App automatisch starten — ideal für dedizierte Fotoframes.</string>
+    <string name="tour_settings_system_body">Start on Boot steuert den normalen Start der App. ManageEngine steuert Start und Fortsetzung des Kioskmodus auf verwalteten Geräten.</string>
     <string name="tour_settings_cache_title">Medien-Cache</string>
     <string name="tour_settings_cache_body">Auto Sync lädt Fotos im Hintergrund herunter, sodass die Diashow offline funktioniert und sofort lädt.</string>
     <string name="tour_settings_connection_title">Verbindung</string>

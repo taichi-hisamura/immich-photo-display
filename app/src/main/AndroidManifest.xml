@@ -43,20 +43,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Retained as a normal alias for backwards-compatible launcher-mode
-             preferences; it is not registered as an Android Home activity. -->
-        <activity-alias
-            android:name=".LauncherAlias"
-            android:targetActivity=".MainActivity"
-            android:label="@string/app_name"
-            android:enabled="false"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity-alias>
-
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"

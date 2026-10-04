@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">Afficher au-dessus des autres apps</string>
     <string name="overlay_perm_message">Pour lancer l\'application automatiquement après le redémarrage, Android nécessite l\'autorisation « Afficher au-dessus des autres applications ». Accordez-la dans l\'écran de paramètres qui s\'ouvre ensuite.</string>
     <string name="open_overlay">Accorder Afficher au-dessus des autres apps</string>
-        <string name="launcher_mode">Mode Launcher</string>
-        <string name="launcher_mode_desc">Définir comme écran d’accueil par défaut. Le moyen le plus fiable de lancer au démarrage — aucune autorisation d’autostart requise. Idéal pour les cadres photo dédiés.</string>
-        <string name="open_launcher_settings">Ouvrir les paramètres du launcher</string>
         <string name="check_now">Vérifier maintenant</string>
-        <string name="launcher_lost_title">Mode launcher inactif</string>
-        <string name="launcher_lost_message">Une autre application est définie comme écran d’accueil par défaut. Appuyez ci-dessous pour ouvrir les paramètres du launcher et re-sélectionner Immich Media Frame.</string>
-        <string name="set_as_launcher">Définir comme launcher par défaut</string>
     <string name="open_settings">Ouvrir les paramètres</string>
     <string name="skip">Ignorer</string>
     <string name="reset_title">Tout réinitialiser ?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">Ouvrez les paramètres sans quitter le diaporama — modifiez l\'intervalle, activez l\'horloge et plus.</string>    <string name="tour_settings_overview_title">Aperçu des paramètres</string>
     <string name="tour_settings_overview_body">Toutes les modifications sont enregistrées automatiquement — pas de bouton de sauvegarde. Faites défiler pour explorer chaque section.</string>
     <string name="tour_settings_system_title">Système et démarrage auto</string>
-    <string name="tour_settings_system_body">Démarrage au démarrage et Mode Lanceur permettent à l\'app de se lancer automatiquement — idéal pour les cadres photo dédiés.</string>
+    <string name="tour_settings_system_body">Le démarrage au démarrage contrôle le lancement normal de l\'app. ManageEngine contrôle le démarrage et la reprise du mode kiosque sur les appareils gérés.</string>
     <string name="tour_settings_cache_title">Cache média</string>
     <string name="tour_settings_cache_body">La synchro auto télécharge les photos en arrière-plan pour que le diaporama fonctionne hors ligne et se charge instantanément.</string>
     <string name="tour_settings_connection_title">Connexion</string>

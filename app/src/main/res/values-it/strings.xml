@@ -112,13 +112,7 @@
     <string name="overlay_perm_title">Visualizza sopra altre app</string>
     <string name="overlay_perm_message">Per avviare automaticamente l\'app dopo il riavvio, Android richiede l\'autorizzazione "Visualizza sopra altre app". Concedila nella schermata delle impostazioni che si apre.</string>
     <string name="open_overlay">Concedi Visualizza sopra altre app</string>
-        <string name="launcher_mode">Modalità Launcher</string>
-        <string name="launcher_mode_desc">Imposta come schermata Home predefinita. Il modo più affidabile per avviare al boot — nessuna autorizzazione di autostart necessaria. Ideale per cornici digitali dedicate.</string>
-        <string name="open_launcher_settings">Apri impostazioni launcher</string>
         <string name="check_now">Controlla ora</string>
-        <string name="launcher_lost_title">Modalità launcher inattiva</string>
-        <string name="launcher_lost_message">Un’altra app è impostata come schermata Home predefinita. Tocca sotto per aprire le impostazioni del launcher e selezionare di nuovo Immich Media Frame.</string>
-        <string name="set_as_launcher">Imposta come launcher predefinito</string>
     <string name="open_settings">Apri impostazioni</string>
     <string name="skip">Salta</string>
     <string name="reset_title">Ripristinare tutto?</string>
@@ -210,7 +204,7 @@
     <string name="tour_slideshow_settings_body">Apri le impostazioni senza uscire dalla presentazione — cambia intervallo, attiva l\'orologio e altro.</string>    <string name="tour_settings_overview_title">Panoramica impostazioni</string>
     <string name="tour_settings_overview_body">Tutte le modifiche vengono salvate automaticamente — nessun pulsante di salvataggio. Scorri verso il basso per esplorare ogni sezione.</string>
     <string name="tour_settings_system_title">Sistema e avvio automatico</string>
-    <string name="tour_settings_system_body">Avvio all\'accensione e Modalità Launcher permettono all\'app di avviarsi automaticamente — ideale per cornici digitali dedicate.</string>
+    <string name="tour_settings_system_body">Avvio all\'accensione controlla l\'avvio normale dell\'app. ManageEngine controlla l\'avvio e la ripresa del kiosk sui dispositivi gestiti.</string>
     <string name="tour_settings_cache_title">Cache media</string>
     <string name="tour_settings_cache_body">La sincronizzazione automatica scarica le foto in background così la presentazione funziona offline e si carica istantaneamente.</string>
     <string name="tour_settings_connection_title">Connessione</string>
